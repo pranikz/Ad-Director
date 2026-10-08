@@ -11,7 +11,7 @@ npm run check        # syntax + MCP handshake tests
 
 ## What it does
 - **Onboarding** (first run, or Settings, then General, then Run setup again):
-  - It checks your Claude Code: install, version, signed-in account, and a live reply test.
+  - It checks your Claude Code: install, version and a live reply test, then asks **which Claude account to use**: the API from your environment (detected: Microsoft Foundry, Amazon Bedrock, Google Vertex or `ANTHROPIC_API_KEY`), your Claude Code login (claude.ai), or an Anthropic API key kept in the macOS keychain. The default is the environment's API when there is one; you can change it any time in Settings, and each chat shows which account it runs on.
   - It connects a media MCP. **AI Studio MCP** runs locally over stdio, is handshake-tested and signs in with Google from the app. **Higgsfield MCP** is registered with your Claude Code (`claude mcp add --transport http --scope user higgsfield https://mcp.higgsfield.ai/mcp`), which handles its OAuth sign-in; its status comes from `claude mcp list`. Any other server can be added in Settings.
   - It adds an optional Gemini key.
 - **Home composer:** type a brief and Director creates the project and starts on it.

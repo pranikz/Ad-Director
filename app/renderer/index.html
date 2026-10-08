@@ -108,6 +108,7 @@
           <h1>Connect Claude Code</h1>
           <p>Director runs on your own Claude Code: your login, plugins, skills and MCP servers. Nothing is sent anywhere else.</p>
           <div class="check-row" id="ob-claude"><i class="ico" style="--i: url(icons/circle-notch.svg)"></i><span>Looking for Claude Code…</span></div>
+          <div class="acct" id="ob-acct"></div>
           <div class="cmd hidden" id="ob-claude-install"><code>npm install -g @anthropic-ai/claude-code</code><button class="btn sm ghost" data-copy="npm install -g @anthropic-ai/claude-code">Copy</button></div>
           <div class="row"><button class="btn ghost" id="ob-claude-test">Test connection</button><span class="status inline" id="ob-claude-ping"></span></div>
           <div class="ob-foot"><span></span><button class="btn" data-go="2">Continue</button></div>
@@ -164,7 +165,7 @@
               <p>Director runs your own Claude Code: same login, plugins, skills and MCPs. The Director plugin is added to every chat.</p>
               <div class="status" id="claude-status">Checking…</div>
               <label>Path to claude <input id="s-claudePath" placeholder="Detected automatically" /></label>
-              <label class="check"><input type="checkbox" id="s-ignoreApiEnv" /> Use my Claude login and ignore ANTHROPIC_*, Bedrock, Vertex and Foundry variables</label>
+              <div class="acct" id="acct"></div>
               <div class="grid2">
                 <label>Permissions <select id="s-permissionMode"><option value="bypassPermissions">Full access in the project (recommended)</option><option value="acceptEdits">Edits only, shell commands blocked</option><option value="default">Ask (blocks in headless mode)</option></select></label>
                 <label>Model <input id="s-model" placeholder="Claude Code default" /></label>

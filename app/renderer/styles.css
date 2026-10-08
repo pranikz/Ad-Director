@@ -247,6 +247,18 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 .servers li small { grid-column: 1 / -1; color: var(--text-3); overflow-wrap: anywhere; font-size: 12px; }
 .servers li small.ok { color: var(--ok); } .servers li small.bad { color: var(--bad); }
 
+/* Claude account chooser */
+.acct { display: grid; gap: 8px; }
+.acct:empty { display: none; }
+.acct-label { font-size: 13px; color: var(--text-2); }
+.acct-opt { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line-2); border-radius: 12px; padding: 11px 14px; cursor: pointer; color: var(--text); }
+.acct-opt:hover { background: var(--hover); }
+.acct-opt.on { border-color: var(--text); }
+.acct-opt input { width: auto; margin-top: 3px; accent-color: var(--primary); }
+.acct-opt b { display: block; font-weight: 500; }
+.acct-opt small { display: block; color: var(--text-3); font-size: 12.5px; margin-top: 1px; }
+.acct-key input { flex: 1; min-width: 220px; border-radius: 999px; }
+
 /* onboarding */
 .ob { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: grid; grid-template-rows: 48px 1fr; }
 .ob-top { -webkit-app-region: drag; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; }

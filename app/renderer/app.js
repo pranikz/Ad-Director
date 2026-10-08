@@ -50,7 +50,8 @@ document.addEventListener("click", (e) => {
 const pill = (id, state, title) => { const p = $(id); p.className = `pill ${state}`; if (title) p.title = title; };
 async function refreshPills() {
   const st = await D.claude.status();
-  pill("pill-claude", st.ok ? "ok" : "bad", st.ok ? `${st.version}${st.account ? `, ${st.account}` : ""}${st.apiMode ? `, ${st.apiMode}` : ""}` : st.error);
+  S.status = st;
+  pill("pill-claude", st.ok ? "ok" : "bad", st.ok ? `${st.version}, using ${st.using}` : st.error);
   const app = Object.entries(S.settings.mcpServers || {}).filter(([, v]) => v.enabled !== false).map(([n]) => n);
   const media = [...new Set([...app, ...(S.settings.mediaServers || [])])];
   if (S.mcpLive) {
@@ -324,7 +325,7 @@ function onChatEvent({ dir, ev }) {
     S.mcpLive = ev.mcp_servers || [];
     refreshPills();
     const off = S.mcpLive.filter((m) => m.status !== "connected");
-    c.box.append(h("div", "meta", `${esc(ev.model || "Claude Code")}, ${S.mcpLive.length - off.length} of ${S.mcpLive.length} MCP servers connected${off.length ? `. Not connected: ${esc(off.map((m) => m.name).join(", "))}` : ""}`));
+    c.box.append(h("div", "meta", `${esc(ev.model || "Claude Code")} via ${esc(S.status?.using || "Claude Code")}, ${S.mcpLive.length - off.length} of ${S.mcpLive.length} MCP servers connected${off.length ? `. Not connected: ${esc(off.map((m) => m.name).join(", "))}` : ""}`));
   } else if (ev.type === "stream_event") {
     const e = ev.event;
     if (e.type === "message_start") c.cur = e.message.id;
@@ -399,7 +400,7 @@ async function openSettings(focusId) {
   S.settings = await D.settings.get();
   const s = S.settings;
   for (const k of ["claudePath", "model", "projectsRoot", "pluginDir", "geminiModel"]) $(`s-${k}`).value = s[k] || "";
-  $("s-permissionMode").value = s.permissionMode; $("s-ignoreApiEnv").checked = !!s.ignoreApiEnv;
+  $("s-permissionMode").value = s.permissionMode;
   $("s-geminiKey").value = ""; $("s-geminiKey").placeholder = s.hasGeminiKey ? "•••••••• saved in keychain" : "AIza…";
   $("s-mcp").value = JSON.stringify(s.mcpServers || {}, null, 2);
   renderServers();
@@ -409,7 +410,8 @@ async function openSettings(focusId) {
   const st = await D.claude.status();
   const box = $("claude-status");
   box.className = `status ${st.ok ? "ok" : "bad"}`;
-  box.textContent = st.ok ? `${st.version} · ${st.path}${st.account ? ` · signed in as ${st.account}` : ""}${st.apiMode ? ` · using ${st.apiMode}` : ""}` : st.error;
+  box.textContent = st.ok ? `${st.version}, using ${st.using}` : st.error;
+  S.status = st; renderAccounts("acct");
 }
 function renderServers() {
   const ul = $("servers"); ul.innerHTML = "";
@@ -451,7 +453,7 @@ $("open-settings").onclick = () => openSettings();
 ["pill-claude", "pill-mcp"].forEach((id) => ($(id).onclick = () => openSettings()));
 $("pill-gemini").onclick = () => openSettings("s-geminiKey");
 $("claude-test").onclick = async () => {
-  await saveSettings({ claudePath: $("s-claudePath").value.trim(), ignoreApiEnv: $("s-ignoreApiEnv").checked, permissionMode: $("s-permissionMode").value, model: $("s-model").value.trim() });
+  await saveSettings({ claudePath: $("s-claudePath").value.trim(), permissionMode: $("s-permissionMode").value, model: $("s-model").value.trim() });
   const box = $("claude-status"); box.className = "status"; box.textContent = "Asking Claude Code to reply…";
   const r = await D.claude.ping();
   box.className = `status ${r.ok ? "ok" : "bad"}`;
@@ -689,6 +691,42 @@ $("save-render").onclick = async () => {
   $("edit-state").textContent = "Saved and rendered ✓";
 };
 
+// ── Claude account: API from the environment, the Claude Code login, or a key stored in Director ──
+function renderAccounts(boxId) {
+  const box = $(boxId), st = S.status;
+  if (!box || !st?.ok) return;
+  const sel = S.settings.authResolved;
+  const opts = [
+    st.envProvider && { id: "env", title: "API from my environment", desc: `${st.envProvider.label} (${st.envProvider.var}), the same setup your terminal uses` },
+    { id: "login", title: "My Claude account", desc: st.account ? `Your Claude Code login, ${st.account}` : "Your Claude Code login. Not signed in yet: run claude in a terminal and use /login." },
+    { id: "apikey", title: "Anthropic API key", desc: S.settings.hasAnthropicKey ? "Using the key saved in your macOS keychain" : "Paste a key from console.anthropic.com. It's kept in your macOS keychain." },
+  ].filter(Boolean);
+  box.innerHTML = `<div class="acct-label">Which Claude account should Director use?</div>` +
+    opts.map((o) => `<label class="acct-opt${o.id === sel ? " on" : ""}"><input type="radio" name="${boxId}-mode" value="${o.id}"${o.id === sel ? " checked" : ""}><span><b>${esc(o.title)}</b><small>${esc(o.desc)}</small></span></label>`).join("") +
+    (sel === "apikey" ? `<div class="row acct-key"><input type="password" placeholder="${S.settings.hasAnthropicKey ? "Saved. Paste a new key to replace it" : "sk-ant-…"}" autocomplete="off" data-key><button type="button" class="btn sm" data-savekey>Save key</button></div>` : "");
+}
+async function afterAccountChange() {
+  S.settings = await D.settings.get(); S.status = await D.claude.status(); S.mcpLive = null;
+  renderAccounts("acct"); renderAccounts("ob-acct"); refreshPills();
+  const box = $("claude-status");
+  if (box && S.status.ok) { box.className = "status ok"; box.textContent = `${S.status.version}, using ${S.status.using}`; }
+  ["ob-claude-ping"].forEach((id) => ($(id).textContent = ""));
+}
+for (const id of ["acct", "ob-acct"]) {
+  $(id).addEventListener("change", async (e) => {
+    if (e.target.name !== `${id}-mode`) return;
+    await D.settings.set({ authMode: e.target.value }); // restarts Director's chats on the new account
+    afterAccountChange();
+  });
+  $(id).addEventListener("click", async (e) => {
+    if (!e.target.closest("[data-savekey]")) return;
+    const k = $(id).querySelector("[data-key]").value.trim();
+    if (!k) return;
+    await D.settings.set({ anthropicKey: k, authMode: "apikey" });
+    afterAccountChange();
+  });
+}
+
 // ── onboarding (first run, or Settings → General → Run setup again) ──
 const OB = $("onboard");
 function obStep(n) {
@@ -715,8 +753,10 @@ function setRow(id, state, text) {
 async function obClaude() {
   setRow("ob-claude", "", "Looking for Claude Code…");
   const st = await D.claude.status();
-  setRow("ob-claude", st.ok ? "ok" : "bad", st.ok ? `Found ${st.version}${st.account ? `, signed in as ${st.account}` : ""}${st.apiMode ? `, using ${st.apiMode}` : ""}` : "Claude Code isn't installed yet. Install it, then test the connection.");
+  setRow("ob-claude", st.ok ? "ok" : "bad", st.ok ? `Found Claude Code ${st.version.replace(/\s*\(Claude Code\)/, "")}` : "Claude Code isn't installed yet. Install it, then test the connection.");
   $("ob-claude-install").classList.toggle("hidden", !!st.ok);
+  S.status = st;
+  if (st.ok) renderAccounts("ob-acct"); else $("ob-acct").innerHTML = "";
 }
 $("ob-claude-test").onclick = async () => {
   const s = $("ob-claude-ping"); s.className = "status inline"; s.textContent = "Asking Claude Code to reply…";

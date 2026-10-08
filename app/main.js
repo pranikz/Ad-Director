@@ -6,7 +6,7 @@ const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { Readable } = require("node:stream");
 const MIME = { ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
-const { childEnv, findClaude, claudeStatus, claudePing, getLoginEnv } = require("./lib/system");
+const { childEnv, resolveAuth, findClaude, claudeStatus, claudePing, getLoginEnv } = require("./lib/system");
 const { ClaudeSession } = require("./lib/claude");
 const mcp = require("./lib/mcp");
 const gemini = require("./lib/gemini");
@@ -21,7 +21,8 @@ const DEFAULTS = {
   claudePath: "",
   permissionMode: "bypassPermissions",
   model: "",
-  ignoreApiEnv: false,
+  authMode: "auto", // auto | env | login | apikey: which Claude account Director runs on
+  anthropicKey: "", // encrypted with the OS keychain (safeStorage), base64
   pluginDir: "",
   mcpServers: {}, // added during onboarding or in Settings; nothing is pre-installed
   mediaServers: [], // names the person connected as media backends (app config or their Claude Code)
@@ -33,12 +34,19 @@ const DEFAULTS = {
 };
 let settings = load();
 function load() {
-  try { return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(SETTINGS(), "utf8")) }; } catch { return { ...DEFAULTS }; }
+  try {
+    const saved = JSON.parse(fs.readFileSync(SETTINGS(), "utf8"));
+    if (saved.ignoreApiEnv && !saved.authMode) saved.authMode = "login"; // older checkbox
+    delete saved.ignoreApiEnv;
+    return { ...DEFAULTS, ...saved };
+  } catch { return { ...DEFAULTS }; }
 }
 function save() {
   fs.mkdirSync(path.dirname(SETTINGS()), { recursive: true });
   fs.writeFileSync(SETTINGS(), JSON.stringify(settings, null, 2), { mode: 0o600 });
 }
+const secret = (field) => { try { return settings[field] ? safeStorage.decryptString(Buffer.from(settings[field], "base64")) : ""; } catch { return ""; } };
+const anthropicKey = () => secret("anthropicKey");
 const geminiKey = () => {
   if (settings.geminiKey) try { return safeStorage.decryptString(Buffer.from(settings.geminiKey, "base64")); } catch {}
   return getLoginEnv().GEMINI_API_KEY || "";
@@ -46,8 +54,9 @@ const geminiKey = () => {
 const pluginDir = () => settings.pluginDir ||
   (app.isPackaged ? path.join(process.resourcesPath, "director") : path.resolve(__dirname, "../plugins/director"));
 const skillDir = () => path.join(pluginDir(), "skills", "direct-film");
-const env = () => childEnv({ ignoreApiEnv: settings.ignoreApiEnv, extra: geminiKey() ? { GEMINI_API_KEY: geminiKey() } : {} });
-const publicSettings = () => ({ ...settings, geminiKey: undefined, hasGeminiKey: !!geminiKey(), pluginDir: pluginDir(), sessions: undefined });
+const env = () => childEnv({ auth: settings.authMode, apiKey: anthropicKey(), extra: geminiKey() ? { GEMINI_API_KEY: geminiKey() } : {} });
+const publicSettings = () => ({ ...settings, geminiKey: undefined, anthropicKey: undefined, hasGeminiKey: !!geminiKey(), hasAnthropicKey: !!anthropicKey(),
+  authResolved: resolveAuth(settings.authMode), pluginDir: pluginDir(), sessions: undefined });
 
 // ── projects ─────────────────────────────────────────────────────────
 const isProject = (d) => ["brief.md", "films", "timeline.json", "overlay"].some((f) => fs.existsSync(path.join(d, f)));
@@ -129,7 +138,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1560, height: 980, minWidth: 1100, minHeight: 700, backgroundColor: nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff", title: "Director",
     titleBarStyle: "hiddenInset", trafficLightPosition: { x: 16, y: 18 },
-    ...(process.env.DIRECTOR_SNAPSHOT && { focusable: false, show: false }), // dev screenshots: never steal the person's clicks
+    ...(process.env.DIRECTOR_SNAPSHOT && { show: false, paintWhenInitiallyHidden: true }), // dev screenshots render hidden: nothing to click by accident
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
@@ -142,11 +151,16 @@ function createWindow() {
   });
   h("settings:get", () => publicSettings());
   h("settings:set", (patch) => {
+    if ("anthropicKey" in patch) {
+      settings.anthropicKey = patch.anthropicKey ? safeStorage.encryptString(patch.anthropicKey).toString("base64") : "";
+      delete patch.anthropicKey;
+      resetSessions();
+    }
     if ("geminiKey" in patch) {
       settings.geminiKey = patch.geminiKey ? safeStorage.encryptString(patch.geminiKey).toString("base64") : "";
       delete patch.geminiKey;
     }
-    const restart = ["mcpServers", "claudePath", "permissionMode", "model", "ignoreApiEnv", "pluginDir"].some((k) => k in patch);
+    const restart = ["mcpServers", "claudePath", "permissionMode", "model", "authMode", "pluginDir"].some((k) => k in patch);
     Object.assign(settings, patch);
     save();
     if (restart) resetSessions(); // next message starts Claude with the new connections (and resumes the chat)
@@ -288,7 +302,6 @@ app.whenReady().then(() => {
   // dev-only self-check: DIRECTOR_SNAPSHOT=out.png [DIRECTOR_OPEN=dir] [DIRECTOR_JS=code] npm start → captures the window, quits
   if (process.env.DIRECTOR_THEME) nativeTheme.themeSource = process.env.DIRECTOR_THEME; // dev: light | dark
   if (process.env.DIRECTOR_SNAPSHOT) win.webContents.on("console-message", (e) => console.log(`[renderer] ${e.message}`));
-  if (process.env.DIRECTOR_SNAPSHOT) win.showInactive();
   if (process.env.DIRECTOR_SNAPSHOT) win.webContents.once("did-finish-load", async () => {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await wait(1500);
