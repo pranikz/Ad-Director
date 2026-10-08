@@ -1,0 +1,15 @@
+{
+  "name": "director",
+  "description": "Director: realistic AI film direction, from story to delivery.",
+  "owner": {
+    "name": "Pratyush Mahapatra",
+    "email": "44764138+pranikz@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "director",
+      "source": "./plugins/director",
+      "description": "AI film director agent + direct-film skill: stories, realism, any media MCP, QA, HyperFrames motion graphics, delivery."
+    }
+  ]
+}
