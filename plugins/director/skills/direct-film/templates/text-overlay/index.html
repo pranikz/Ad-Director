@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id": "cfg", "type": "string", "label": "Callouts JSON (references/motion-graphics.md)", "default": "{\"dur\": 15.08, \"callouts\": [{\"t0\": 0.5, \"t1\": 3.5, \"x\": 1400, \"y\": 360, \"rot\": -8, \"lines\": [\"Hello\", \"World!\"], \"doodle\": {\"name\": \"sparkle\", \"dx\": 40, \"dy\": 170}}], \"cards\": [{\"t0\": 4, \"t1\": 7, \"x\": 1200, \"y\": 120, \"title\": \"Notification \u2713\", \"body\": \"Product moment<br><em>goes here</em>\"}]}"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Permanent+Marker&family=Kalam:wght@700&family=Bangers&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=block" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+      #root { position: relative; width: 100%; height: 100%; }
+      #layer { position: absolute; inset: 0; }
+      .co { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+      .ink { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); filter: url(#boil0) drop-shadow(0 3px 9px rgba(0,0,0,.55)); }
+      .txt { font: 400 128px/0.86 "Caveat Brush", cursive; color: var(--ink, #fff); white-space: nowrap; text-align: left; }
+      .txt div:nth-child(2) { margin-left: .55em; }
+      .txt div:nth-child(3) { margin-left: .25em; }
+      .co svg { position: absolute; overflow: visible; }
+      .co svg path { fill: none; stroke: var(--ink, #fff); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+      .card { position: absolute; display: flex; align-items: center; gap: 22px; width: 660px; padding: 26px 32px; border-radius: 26px; background: var(--card-bg, rgba(255,255,255,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.35); font-family: "Plus Jakarta Sans", sans-serif; color: var(--card-title, #111827); }
+      .card .ic { width: 76px; height: 76px; flex: none; border-radius: 50%; background: var(--card-icon, #2fb35a); display: grid; place-items: center; }
+      .card .ic svg path { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+      .card b { display: block; font: 800 36px/1.15 "Plus Jakarta Sans"; }
+      .card span { display: block; margin-top: 6px; font: 600 29px/1.25 "Plus Jakarta Sans"; color: var(--card-body, #4b5563); }
+      .card span em { font-style: normal; color: var(--card-accent, #ea580c); font-weight: 800; }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute">
+      <filter id="boil0"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="2" seed="1" /><feDisplacementMap in="SourceGraphic" scale="3" /></filter>
+      <filter id="boil1"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="2" seed="7" /><feDisplacementMap in="SourceGraphic" scale="3" /></filter>
+      <filter id="boil2"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="2" seed="13" /><feDisplacementMap in="SourceGraphic" scale="3" /></filter>
+    </svg>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="15.08" data-width="1920" data-height="1080">
+      <div id="layer" class="clip" data-start="0" data-duration="15.08" data-track-index="0"></div>
+    </div>
+    <script>
+      // ponytail: doodles are hand-tuned single-stroke paths in a 200x200 box, no icon library
+      const D = {
+        bulb: "M100 30 C60 30 45 70 60 100 C70 118 78 125 78 140 L122 140 C122 125 130 118 140 100 C155 70 140 30 100 30 Z M82 154 H118 M88 168 H112 M100 2 V16 M38 28 L48 38 M162 28 L152 38 M18 84 H32 M168 84 H182",
+        bulbOff: "M100 30 C60 30 45 70 60 100 C70 118 78 125 78 140 L122 140 C122 125 130 118 140 100 C155 70 140 30 100 30 Z M82 154 H118 M88 168 H112 M78 62 L122 106 M122 62 L78 106",
+        plug: "M60 70 H140 V105 C140 132 122 148 100 148 C78 148 60 132 60 105 Z M80 70 V36 M120 70 V36 M100 148 C100 176 132 184 158 170 M168 22 L150 52 L172 56 L152 92",
+        paan: "M100 178 C40 142 18 92 44 56 C64 30 94 40 100 62 C106 40 136 30 156 56 C182 92 160 142 100 178 Z M100 178 V64 M100 124 L70 98 M100 102 L132 78",
+        unlock: "M52 96 H148 V172 H52 Z M74 96 V64 C74 26 128 26 128 56 M100 124 V146",
+        dumbbell: "M26 78 V122 M48 64 V136 M152 64 V136 M174 78 V122 M48 100 H152",
+        featherWeight: "M18 150 C40 86 82 52 108 40 C98 84 64 124 18 150 Z M18 150 L92 62 M118 168 L130 120 H174 L186 168 Z M142 120 C142 104 162 104 162 120",
+        coin: "M100 32 A68 68 0 1 1 99.9 32 Z M74 72 H126 M74 90 H126 M88 72 C112 72 116 104 88 106 L122 138 M176 26 V50 M164 38 H188",
+        camera: "M30 70 H70 L82 52 H118 L130 70 H170 V160 H30 Z M100 88 A28 28 0 1 1 99.9 88 Z M150 86 H158",
+        chai: "M64 80 L76 172 H124 L136 80 Z M68 108 H132 M86 62 C74 46 96 36 84 18 M116 62 C104 46 126 36 114 18",
+        sugar: "M58 92 L100 72 L142 92 L100 112 Z M58 92 V142 L100 162 V112 M142 92 V142 L100 162 M150 40 L160 30 M168 58 H182",
+        ball: "M100 30 A70 70 0 1 1 99.9 30 Z M70 42 C90 80 90 120 70 158 M130 42 C110 80 110 120 130 158",
+        six: "M132 36 C90 36 58 78 58 124 C58 156 80 172 102 172 C128 172 144 152 144 128 C144 104 124 90 102 90 C80 90 66 102 60 118 M168 20 L178 6 M176 48 H192 M160 66 L172 78",
+        tiffin: "M58 60 H142 V96 H58 Z M58 100 H142 V136 H58 Z M58 140 H142 V172 H58 Z M76 60 C76 22 124 22 124 60",
+        moon: "M124 40 C82 40 56 72 56 108 C56 148 92 172 128 166 C96 152 86 122 92 96 C98 66 112 48 124 40 Z M140 40 H166 L140 66 H166 M150 88 H170 L150 108 H170",
+        pill: "M60 140 L140 60 C152 48 172 48 182 60 C194 72 194 90 182 102 L102 182 C90 194 70 194 60 182 C48 170 48 150 60 140 Z M100 100 L142 142",
+        heart: "M100 172 C40 128 18 96 30 64 C42 34 80 30 100 60 C120 30 158 34 170 64 C182 96 160 128 100 172 Z",
+        star: "M100 22 L122 76 L180 80 L135 116 L150 172 L100 142 L50 172 L65 116 L20 80 L78 76 Z",
+        check: "M36 104 L82 150 L168 46",
+        cross: "M48 48 L152 152 M152 48 L48 152",
+        arrowUp: "M100 180 V30 M50 80 L100 30 L150 80",
+        clock: "M100 30 A70 70 0 1 1 99.9 30 Z M100 60 V102 L132 122",
+        phone: "M70 24 H130 C138 24 144 30 144 38 V162 C144 170 138 176 130 176 H70 C62 176 56 170 56 162 V38 C56 30 62 24 70 24 Z M88 152 H112 M170 50 C182 62 182 82 170 94 M184 36 C204 56 204 88 184 108",
+        cart: "M18 40 H48 L72 130 H158 L178 66 H58 M84 160 A10 10 0 1 1 83.9 160 M146 160 A10 10 0 1 1 145.9 160",
+        bag: "M44 72 H156 L166 178 H34 Z M74 72 V58 C74 30 126 30 126 58 V72",
+        gift: "M34 84 H166 V116 H34 Z M46 116 V178 H154 V116 M100 84 V178 M100 84 C80 54 52 60 62 78 M100 84 C120 54 148 60 138 78",
+        house: "M30 98 L100 36 L170 98 M50 82 V172 H150 V82 M86 172 V124 H114 V172",
+        car: "M24 128 V104 L52 70 H140 L170 104 H182 V128 Z M56 140 A16 16 0 1 1 55.9 140 M146 140 A16 16 0 1 1 145.9 140 M64 70 L56 104 M120 70 V104",
+        leaf: "M30 170 C30 90 90 36 172 30 C170 112 116 170 30 170 Z M30 170 L130 72",
+        sparkle: "M100 20 C106 76 124 94 180 100 C124 106 106 124 100 180 C94 124 76 106 20 100 C76 94 94 76 100 20 Z",
+        note: "M76 150 A20 16 0 1 1 75.9 150 M96 150 V40 L160 26 V130 M160 130 A20 16 0 1 1 159.9 130",
+        percent: "M60 64 A18 18 0 1 1 59.9 64 M140 136 A18 18 0 1 1 139.9 136 M156 44 L44 156",
+        bolt: "M116 18 L50 112 H98 L84 182 L152 86 H104 Z",
+        rocket: "M100 18 C136 40 150 86 140 140 H60 C50 86 64 40 100 18 Z M60 140 L36 172 L70 160 M140 140 L164 172 L130 160 M100 72 A14 14 0 1 1 99.9 72"
+      };
+      const { cfg } = window.__hyperframes.getVariables();
+      const C = typeof cfg === "string" ? JSON.parse(cfg) : cfg;
+      const layer = document.getElementById("layer");
+      // theme: { ink, font, card: { bg, title, body, accent, icon } } — all optional
+      const TH = C.theme || {}, rs = document.documentElement.style;
+      if (TH.ink) rs.setProperty("--ink", TH.ink);
+      Object.entries(TH.card || {}).forEach(([k, v]) => rs.setProperty(`--card-${k}`, v));
+      if (TH.font) document.querySelectorAll("style")[0].append(`.txt { font-family: ${JSON.stringify(TH.font)}, cursive; }`);
+      const tl = gsap.timeline({ paused: true });
+      const NS = "http://www.w3.org/2000/svg";
+      const svgPath = (d, box) => {
+        const s = document.createElementNS(NS, "svg");
+        s.setAttribute("viewBox", box || "0 0 200 200");
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", d); p.setAttribute("pathLength", "1");
+        p.style.strokeDasharray = "1"; p.style.strokeDashoffset = "1";
+        s.appendChild(p); return [s, p];
+      };
+
+      C.callouts.forEach((c, i) => {
+        const co = document.createElement("div");
+        co.className = "co"; co.style.left = c.x + "px"; co.style.top = c.y + "px";
+        if (c.glow) co.style.filter = "drop-shadow(0 0 22px rgba(0,0,0,.9)) drop-shadow(0 0 8px rgba(0,0,0,.8))";
+        const ink = document.createElement("div"); ink.className = "ink";
+        const txt = document.createElement("div"); txt.className = "txt";
+        if (c.size) txt.style.fontSize = c.size + "px";
+        c.lines.forEach(l => { const d = document.createElement("div"); d.textContent = l; txt.appendChild(d); });
+        ink.appendChild(txt);
+        // sparkle ticks at the top-left of the lettering
+        const [sp, spP] = svgPath("M30 70 L12 52 M58 50 L54 22 M10 104 L-14 100", "0 0 80 120");
+        sp.style.cssText = "left:-70px;top:-40px;width:80px;height:120px";
+        ink.appendChild(sp);
+        co.appendChild(ink);
+        let dP = null;
+        if (c.doodle) {
+          const sc = c.doodle.scale || 1;
+          const [ds, p] = svgPath(D[c.doodle.name]); dP = p;
+          ds.style.cssText = `left:${c.doodle.dx - 100 * sc}px;top:${c.doodle.dy - 100 * sc}px;width:${200 * sc}px;height:${200 * sc}px;filter:url(#boil0) drop-shadow(0 3px 8px rgba(0,0,0,.5))`;
+          co.appendChild(ds);
+        }
+        let aP = null;
+        if (c.arrow) {
+          // curved arrow from the lettering to a target, both relative to the callout centre
+          const [fx, fy] = c.arrow.from, [tx, ty] = [c.arrow.to[0] - c.x, c.arrow.to[1] - c.y];
+          const mx = (fx + tx) / 2 + (c.arrow.bend || 60) * (fy - ty) / Math.hypot(tx - fx, ty - fy);
+          const my = (fy + ty) / 2 + (c.arrow.bend || 60) * (tx - fx) / Math.hypot(tx - fx, ty - fy);
+          const ang = Math.atan2(ty - my, tx - mx), h = 26;
+          const hx1 = tx - h * Math.cos(ang - .5), hy1 = ty - h * Math.sin(ang - .5);
+          const hx2 = tx - h * Math.cos(ang + .5), hy2 = ty - h * Math.sin(ang + .5);
+          const d = `M${fx} ${fy} Q${mx} ${my} ${tx} ${ty} M${hx1} ${hy1} L${tx} ${ty} L${hx2} ${hy2}`;
+          const [as, p] = svgPath(d, "-2000 -2000 4000 4000"); aP = p;
+          as.style.cssText = "left:-2000px;top:-2000px;width:4000px;height:4000px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))";
+          co.appendChild(as);
+        }
+        layer.appendChild(co);
+        const rot = c.rot ?? -7;
+        tl.set(co, { opacity: 0 }, 0);
+        tl.fromTo(co, { opacity: 0, scale: .4, rotation: rot - 12 }, { opacity: 1, scale: 1, rotation: rot, duration: .38, ease: "back.out(2.4)" }, c.t0);
+        txt.querySelectorAll("div").forEach((l, k) => tl.fromTo(l, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: .32, ease: "power1.out" }, c.t0 + .08 + k * .2));
+        tl.to(spP, { strokeDashoffset: 0, duration: .22, ease: "power2.out" }, c.t0 + .3);
+        if (dP) tl.to(dP, { strokeDashoffset: 0, duration: .6, ease: "power1.inOut" }, c.t0 + .35);
+        if (aP) tl.to(aP, { strokeDashoffset: 0, duration: .4, ease: "power2.out" }, c.t0 + .45);
+        const hold = c.t1 - c.t0 - .7;
+        if (hold > .6) tl.to(co, { y: "-=6", duration: .6, ease: "sine.inOut", yoyo: true, repeat: Math.max(1, Math.floor(hold / .6) - 1) }, c.t0 + .4);
+        tl.to(co, { opacity: 0, scale: .8, duration: .22, ease: "power2.in" }, c.t1 - .22);
+      });
+
+      (C.cards || []).forEach(c => {
+        const card = document.createElement("div"); card.className = "card";
+        card.style.left = c.x + "px"; card.style.top = c.y + "px";
+        card.innerHTML = `<div class="ic"><svg viewBox="0 0 40 40" width="34" height="34"><path d="M9 21 L17 29 L31 12" pathLength="1" style="stroke-dasharray:1;stroke-dashoffset:1"/></svg></div><div><b></b><span></span></div>`;
+        card.querySelector("b").textContent = c.title;
+        card.querySelector("span").innerHTML = c.body; // body is our own config copy (may contain <em>)
+        layer.appendChild(card);
+        tl.set(card, { opacity: 0 }, 0);
+        tl.fromTo(card, { opacity: 0, x: c.from || 80, scale: .92 }, { opacity: 1, x: 0, scale: 1, duration: .45, ease: "back.out(1.8)" }, c.t0);
+        tl.to(card.querySelector("path"), { strokeDashoffset: 0, duration: .35, ease: "power2.out" }, c.t0 + .3);
+        tl.to(card, { opacity: 0, x: (c.from || 80) / 2, duration: .25, ease: "power2.in" }, c.t1 - .25);
+      });
+
+      // hand-drawn "boil": cycle displacement seeds 8x a second
+      const inks = layer.querySelectorAll(".ink, .co svg");
+      for (let t = 0, k = 0; t < C.dur; t += .125, k++) tl.set(inks, { filter: `url(#boil${k % 3}) drop-shadow(0 3px 9px rgba(0,0,0,.55))` }, t);
+      tl.set(layer, { opacity: 1 }, C.dur - .01);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
