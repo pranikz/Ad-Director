@@ -35,7 +35,7 @@
       /* B — packshot */
       #pack { background: #fff; }
       #hills { position: absolute; left: 0; right: 0; bottom: 0; width: 1920px; height: 300px; }
-      #sapling { position: absolute; left: 70px; top: 150px; width: 640px; mix-blend-mode: multiply; transform-origin: 50% 96%; }
+      #art { position: absolute; left: 70px; top: 150px; width: 640px; mix-blend-mode: multiply; transform-origin: 50% 96%; }
       .copy { position: absolute; left: 760px; right: 80px; top: 200px; }
       #pack.noart .copy { left: 160px; right: 160px; }
       #logo { width: 470px; display: block; margin: 0 auto; }
@@ -67,7 +67,7 @@
           <path d="M0 190 C 420 120, 900 170, 1260 200 S 1760 150, 1920 170 V300 H0Z" fill="#bed8b4"/>
           <path d="M0 250 C 500 210, 1000 260, 1400 250 S 1800 230, 1920 240 V300 H0Z" fill="#a9cb9d"/>
         </svg>
-        <img id="sapling" alt="" />
+        <img id="art" alt="" />
         <div class="copy">
           <img id="logo" alt="" />
           <div class="lines" id="lines"></div>
@@ -102,7 +102,7 @@
       $("tagline").innerHTML = O.tagline || "";
       const P = B.pack;
       $("logo").src = P.logo; $("logo").alt = P.logoAlt || "";
-      if (P.art) $("sapling").src = P.art; else $("sapling").remove();
+      if (P.art) $("art").src = P.art; else $("art").remove();
       if (P.hills === false) $("hills").style.display = "none";
       if (!P.art) $("pack").classList.add("noart");
       $("lines").innerHTML = P.lines.map((l, i) => `<div id="l${i}"${l.accent ? ' class="o"' : ""}>${l.html}</div>`).join("");
@@ -123,11 +123,11 @@
       tl.to("#offer > *:not(.tc)", { y: -30, opacity: 0, duration: .3, ease: "power2.in", stagger: .02 }, 3.55);
       // B — packshot (3.9–10s); line timings come from the brand config so they sync to the VO
       if (P.hills !== false) tl.from("#hills", { y: 120, duration: .8, ease: E }, 3.9);
-      if (P.art) tl.from("#sapling", { scaleY: .55, scaleX: .8, opacity: 0, duration: 1.4, ease: "power2.out" }, 4.0);
+      if (P.art) tl.from("#art", { scaleY: .55, scaleX: .8, opacity: 0, duration: 1.4, ease: "power2.out" }, 4.0);
       tl.from("#logo", { y: 30, opacity: 0, duration: .5, ease: E }, 4.05);
       P.lines.forEach((l, i) => tl.from(`#l${i}`, { y: 26, opacity: 0, duration: .45, ease: E }, l.t));
       if (P.rule) tl.from("#rule", { opacity: 0, duration: .6, ease: E }, P.ruleAt || 8.1);
-      if (P.art) tl.to("#sapling", { rotation: 1.2, duration: 2, ease: "sine.inOut", transformOrigin: "50% 96%" }, 6.0);
+      if (P.art) tl.to("#art", { rotation: 1.2, duration: 2, ease: "sine.inOut", transformOrigin: "50% 96%" }, 6.0);
       window.__timelines = window.__timelines || {};
       window.__timelines["main"] = tl;
       tl.seek(0);
