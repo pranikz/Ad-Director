@@ -1,0 +1,64 @@
+{
+ "colors": {
+  "primary": "#111827",
+  "accent": "#f59e0b",
+  "rule": "#6b7280",
+  "offerBg": [
+   "#ffffff",
+   "#f8fafc",
+   "#eef2f7"
+  ]
+ },
+ "offer": {
+  "pill": "Your <b>Product</b> Name",
+  "toggle": "",
+  "eyebrow": "NOW",
+  "value": "50%",
+  "suffix": "off*",
+  "chips": [
+   {
+    "icon": "bolt",
+    "title": "Fast",
+    "sub": "benefit one"
+   },
+   {
+    "icon": "check",
+    "title": "Simple",
+    "sub": "benefit two"
+   },
+   {
+    "icon": "clock",
+    "title": "Anytime",
+    "sub": "benefit three"
+   }
+  ],
+  "tagline": "Your tagline goes <em>here.</em>"
+ },
+ "pack": {
+  "logo": "assets/logo.svg",
+  "logoAlt": "Brand",
+  "art": "",
+  "hills": false,
+  "lines": [
+   {
+    "t": 4.25,
+    "html": "Your call to action,"
+   },
+   {
+    "t": 5.55,
+    "html": "with the product name",
+    "accent": true
+   },
+   {
+    "t": 7.2,
+    "html": "and one closing line."
+   }
+  ],
+  "rule": [
+   "FIRST BRAND LINE",
+   "SECOND BRAND LINE"
+  ],
+  "ruleAt": 8.1
+ },
+ "disclaimer": "*Terms and conditions apply."
+}

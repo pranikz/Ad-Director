@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id": "brand", "type": "string", "label": "Brand + offer JSON (references/motion-graphics.md)", "default": "{\"colors\": {\"primary\": \"#111827\", \"accent\": \"#f59e0b\", \"rule\": \"#6b7280\", \"offerBg\": [\"#ffffff\", \"#f8fafc\", \"#eef2f7\"]}, \"offer\": {\"pill\": \"Your <b>Product</b> Name\", \"toggle\": \"\", \"eyebrow\": \"NOW\", \"value\": \"50%\", \"suffix\": \"off*\", \"chips\": [{\"icon\": \"bolt\", \"title\": \"Fast\", \"sub\": \"benefit one\"}, {\"icon\": \"check\", \"title\": \"Simple\", \"sub\": \"benefit two\"}, {\"icon\": \"clock\", \"title\": \"Anytime\", \"sub\": \"benefit three\"}], \"tagline\": \"Your tagline goes <em>here.</em>\"}, \"pack\": {\"logo\": \"assets/logo.svg\", \"logoAlt\": \"Brand\", \"art\": \"\", \"hills\": false, \"lines\": [{\"t\": 4.25, \"html\": \"Your call to action,\"}, {\"t\": 5.55, \"html\": \"with the product name\", \"accent\": true}, {\"t\": 7.2, \"html\": \"and one closing line.\"}], \"rule\": [\"FIRST BRAND LINE\", \"SECOND BRAND LINE\"], \"ruleAt\": 8.1}, \"disclaimer\": \"*Terms and conditions apply.\"}"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=block" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #fff; }
+      :root { --navy: #2f4a91; --orange: #ef4d07; --green: #3f7d3c; }
+      #root { position: relative; width: 100%; height: 100%; font-family: "Plus Jakarta Sans", sans-serif; color: var(--navy); }
+      .clip { position: absolute; inset: 0; }
+      .center { display: flex; flex-direction: column; align-items: center; }
+
+      /* A — offer */
+      #offer { background: linear-gradient(160deg, #ffffff 0%, #f2f7ff 55%, #e6efff 100%); justify-content: center; padding-bottom: 40px; }
+      .pill { display: flex; align-items: center; gap: 22px; padding: 14px 18px 14px 30px; border-radius: 999px; background: #fff; box-shadow: 0 6px 28px rgba(47,74,145,.14); font: 700 30px/1 "Plus Jakarta Sans"; }
+      .pill b { color: var(--orange); }
+      .toggle { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 22px; border-radius: 999px; background: var(--navy); color: #fff; font: 700 24px/1 "Plus Jakarta Sans"; }
+      .track { position: relative; width: 74px; height: 40px; border-radius: 999px; background: #d64545; }
+      .knob { position: absolute; top: 4px; left: 4px; width: 32px; height: 32px; border-radius: 50%; background: #fff; }
+      .state { width: 38px; }
+      .upto { margin-top: 34px; font: 800 64px/1 "Plus Jakarta Sans"; letter-spacing: .02em; }
+      .rate { display: flex; align-items: flex-end; gap: 18px; margin-top: 4px; }
+      .six { font: 800 320px/1 "Plus Jakarta Sans"; color: var(--orange); letter-spacing: -.04em; }
+      .pa { font: 800 72px/1 "Plus Jakarta Sans"; margin-bottom: 70px; }
+      .chips { display: flex; gap: 28px; margin-top: 30px; }
+      .chip { display: flex; align-items: center; gap: 16px; padding: 18px 30px; border-radius: 22px; background: #fff; box-shadow: 0 6px 24px rgba(47,74,145,.12); font: 700 32px/1.1 "Plus Jakarta Sans"; }
+      .chip small { display: block; font: 500 22px/1.2 "Plus Jakarta Sans"; color: #5d6b93; }
+      .chip svg { width: 52px; height: 52px; flex: none; }
+      .tagline { margin-top: 40px; font: 700 40px/1 "Plus Jakarta Sans"; }
+      .tagline em { font-style: normal; color: var(--orange); }
+
+      /* B — packshot */
+      #pack { background: #fff; }
+      #hills { position: absolute; left: 0; right: 0; bottom: 0; width: 1920px; height: 300px; }
+      #sapling { position: absolute; left: 70px; top: 150px; width: 640px; mix-blend-mode: multiply; transform-origin: 50% 96%; }
+      .copy { position: absolute; left: 760px; right: 80px; top: 200px; }
+      #pack.noart .copy { left: 160px; right: 160px; }
+      #logo { width: 470px; display: block; margin: 0 auto; }
+      .lines { margin-top: 64px; text-align: center; font: 800 60px/1.22 "Plus Jakarta Sans"; letter-spacing: -.01em; }
+      .lines .o { color: var(--orange); }
+      .rule { display: flex; align-items: center; gap: 30px; margin-top: 44px; color: var(--green); font: 700 30px/1 "Plus Jakarta Sans"; letter-spacing: .2em; }
+      .rule i { flex: 1; height: 2px; background: var(--green); opacity: .45; }
+      .rule svg { width: 46px; height: 64px; }
+      .tc { position: absolute; right: 60px; bottom: 34px; font: 500 18px/1 "Plus Jakarta Sans"; color: #3f4766; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+
+      <div id="offer" class="clip center" data-start="0" data-duration="3.9" data-track-index="0">
+        <div class="pill" id="pill"><span id="pillText"></span>
+          <span class="toggle" id="toggle"><span id="toggleText"></span> <span class="track" id="track"><span class="knob" id="knob"></span></span><span class="state" id="state">OFF</span></span>
+        </div>
+        <div class="upto" id="upto"></div>
+        <div class="rate" id="rate"><span class="six" id="value"></span><span class="pa" id="suffix"></span></div>
+        <div class="chips" id="chips"></div>
+        <div class="tagline" id="tagline"></div>
+        <div class="tc"></div>
+      </div>
+
+      <div id="pack" class="clip" data-start="3.9" data-duration="6.1" data-track-index="1">
+        <svg id="hills" viewBox="0 0 1920 300" preserveAspectRatio="none">
+          <path d="M0 120 C 360 40, 760 70, 1100 110 S 1700 60, 1920 80 V300 H0Z" fill="#dbeacf"/>
+          <path d="M0 190 C 420 120, 900 170, 1260 200 S 1760 150, 1920 170 V300 H0Z" fill="#bed8b4"/>
+          <path d="M0 250 C 500 210, 1000 260, 1400 250 S 1800 230, 1920 240 V300 H0Z" fill="#a9cb9d"/>
+        </svg>
+        <img id="sapling" alt="" />
+        <div class="copy">
+          <img id="logo" alt="" />
+          <div class="lines" id="lines"></div>
+          <div class="rule" id="rule"><i></i><span id="ruleL"></span><svg viewBox="0 0 46 64"><path d="M8 60 C 4 30, 20 8, 42 2 C 44 30, 30 52, 8 60Z" fill="#4f9a3f"/><path d="M8 60 C 18 40, 28 24, 40 6" stroke="#2f6a2a" stroke-width="2" fill="none"/></svg><span id="ruleR"></span><i></i></div>
+        </div>
+        <div class="tc"></div>
+      </div>
+
+    </div>
+    <script>
+      // Everything brand-specific comes from the "brand" variable; the HTML is our own config, so innerHTML is fine.
+      const { brand } = window.__hyperframes.getVariables();
+      const B = typeof brand === "string" ? JSON.parse(brand) : brand;
+      const $ = (id) => document.getElementById(id);
+      const css = document.documentElement.style;
+      css.setProperty("--navy", B.colors.primary); css.setProperty("--orange", B.colors.accent); css.setProperty("--green", B.colors.rule || B.colors.primary);
+      if (B.colors.offerBg) $("offer").style.background = `linear-gradient(160deg, ${B.colors.offerBg.map((c, i, a) => `${c} ${Math.round(100 * i / (a.length - 1))}%`).join(", ")})`;
+      const ICON = {
+        calendar: '<rect x="6" y="10" width="36" height="32" rx="5"/><path d="M6 19h36M15 6v8M33 6v8"/><path d="M14 27h4M22 27h4M30 27h4M14 34h4M22 34h4" class="a"/>',
+        rupee: '<circle cx="24" cy="24" r="18"/><path d="M17 15h14M17 21h14M22 15c5 0 7 3 7 6s-3 6-8 6h-2l10 9" class="a"/>',
+        unlock: '<rect x="9" y="21" width="30" height="21" rx="4"/><path d="M16 21v-6a8 8 0 0 1 15-4"/><path d="M6 6l36 36" class="a"/>',
+        check: '<circle cx="24" cy="24" r="18"/><path d="M15 25l6 6 12-14" class="a"/>',
+        clock: '<circle cx="24" cy="24" r="18"/><path d="M24 13v12l8 5" class="a"/>',
+        percent: '<circle cx="15" cy="15" r="5"/><circle cx="33" cy="33" r="5"/><path d="M36 10L12 38" class="a"/>',
+        bolt: '<path d="M27 4L10 28h13l-3 16 18-25H25z" class="a"/>',
+      };
+      const O = B.offer;
+      $("pillText").innerHTML = O.pill || ""; if (!O.pill) $("pill").style.display = "none";
+      if (O.toggle) $("toggleText").textContent = O.toggle; else $("toggle").style.display = "none";
+      $("upto").innerHTML = O.eyebrow || ""; $("value").innerHTML = O.value; $("suffix").innerHTML = O.suffix || "";
+      $("chips").innerHTML = (O.chips || []).map((c) => `<div class="chip"><svg viewBox="0 0 48 48" fill="none" stroke="var(--navy)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${(ICON[c.icon] || ICON.check).replace(/class="a"/g, 'stroke="var(--orange)"')}</svg><span>${c.title}<small>${c.sub || ""}</small></span></div>`).join("");
+      $("tagline").innerHTML = O.tagline || "";
+      const P = B.pack;
+      $("logo").src = P.logo; $("logo").alt = P.logoAlt || "";
+      if (P.art) $("sapling").src = P.art; else $("sapling").remove();
+      if (P.hills === false) $("hills").style.display = "none";
+      if (!P.art) $("pack").classList.add("noart");
+      $("lines").innerHTML = P.lines.map((l, i) => `<div id="l${i}"${l.accent ? ' class="o"' : ""}>${l.html}</div>`).join("");
+      if (P.rule) { $("ruleL").textContent = P.rule[0]; $("ruleR").textContent = P.rule[1]; } else $("rule").style.display = "none";
+      document.querySelectorAll(".tc").forEach((el) => (el.innerHTML = B.disclaimer || ""));
+
+      const tl = gsap.timeline({ paused: true });
+      const E = "power3.out";
+      // A — offer (0–3.9s)
+      tl.from("#pill", { y: -40, opacity: 0, duration: .45, ease: E }, 0);
+      tl.to("#knob", { x: 34, duration: .25, ease: "power2.inOut" }, .55);
+      tl.to("#track", { backgroundColor: "#2fb35a", duration: .25 }, .55);
+      tl.set("#state", { textContent: "ON" }, .68);
+      tl.from("#upto", { y: 30, opacity: 0, duration: .4, ease: E }, .75);
+      tl.from("#rate", { scale: .82, opacity: 0, duration: .55, ease: "back.out(1.6)", transformOrigin: "50% 80%" }, .9);
+      tl.from(".chip", { y: 36, opacity: 0, duration: .45, ease: E, stagger: .14 }, 1.45);
+      tl.from("#tagline", { y: 24, opacity: 0, duration: .45, ease: E }, 2.35);
+      tl.to("#offer > *:not(.tc)", { y: -30, opacity: 0, duration: .3, ease: "power2.in", stagger: .02 }, 3.55);
+      // B — packshot (3.9–10s); line timings come from the brand config so they sync to the VO
+      if (P.hills !== false) tl.from("#hills", { y: 120, duration: .8, ease: E }, 3.9);
+      if (P.art) tl.from("#sapling", { scaleY: .55, scaleX: .8, opacity: 0, duration: 1.4, ease: "power2.out" }, 4.0);
+      tl.from("#logo", { y: 30, opacity: 0, duration: .5, ease: E }, 4.05);
+      P.lines.forEach((l, i) => tl.from(`#l${i}`, { y: 26, opacity: 0, duration: .45, ease: E }, l.t));
+      if (P.rule) tl.from("#rule", { opacity: 0, duration: .6, ease: E }, P.ruleAt || 8.1);
+      if (P.art) tl.to("#sapling", { rotation: 1.2, duration: 2, ease: "sine.inOut", transformOrigin: "50% 96%" }, 6.0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
