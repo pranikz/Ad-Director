@@ -1,0 +1,18 @@
+{
+  "name": "director-app",
+  "productName": "Director",
+  "version": "0.1.0",
+  "description": "Desktop studio for Director, an AI ad-film director agent: chat with your own Claude Code, connect any media MCP, review and edit films on a timeline.",
+  "main": "main.js",
+  "author": "Pratyush Mahapatra <44764138+pranikz@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check lib/claude.js && node --check lib/mcp.js && node --check lib/gemini.js && node --check lib/system.js && node --check renderer/app.js && node --test test/*.test.js",
+    "dist": "electron-packager . Director --platform=darwin --arch=arm64 --out=dist --overwrite --icon=assets/icon.icns --extra-resource=../plugins/director --ignore='^/dist' --ignore='^/test'"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.4.5"
+  }
+}
