@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' media: data:; media-src media:; connect-src 'self'" />
+    <title>Director</title>
+    <!-- only for the live callout preview: these match the text-overlay template's fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Permanent+Marker&family=Kalam:wght@700&family=Bangers&family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><i class="ico" style="--i: url(icons/film-slate.svg)"></i>Director</div>
+      <div class="crumb" id="crumb"></div>
+      <div class="pills">
+        <button class="pill" id="pill-claude" title="Claude Code"><i></i>Claude Code</button>
+        <button class="pill" id="pill-mcp" title="Media MCPs"><i></i>Media</button>
+        <button class="pill" id="pill-gemini" title="Gemini (optional)"><i></i>Gemini</button>
+        <button class="icon" id="open-settings" title="Settings" aria-label="Settings"><i class="ico" style="--i: url(icons/gear-six.svg)"></i></button>
+      </div>
+    </header>
+
+    <main class="app">
+      <aside class="side">
+        <div class="side-head">
+          <button class="btn ghost" id="new-project"><i class="ico" style="--i: url(icons/plus.svg)"></i>New project</button>
+          <button class="btn plain" id="pick-project"><i class="ico" style="--i: url(icons/folder-open.svg)"></i>Open folder</button>
+        </div>
+        <div class="side-label">Projects</div>
+        <ul class="projects" id="projects"></ul>
+      </aside>
+
+      <section class="stage" id="stage">
+        <div class="empty" id="empty">
+          <h1>What are we making?</h1>
+          <p class="sub">Describe the ad, paste a product link or point at a reference video. Director writes the stories, casts real people, generates every shot and checks it.</p>
+          <form class="box" id="empty-form">
+            <textarea id="empty-input" rows="2" placeholder="Four Hindi variations of ~/Downloads/ref.mp4, more realistic, same claims"></textarea>
+            <div class="box-bar"><span class="muted" id="empty-status"></span><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
+          </form>
+          <div class="chips" id="chips">
+            <button class="chip" data-brief="Make 4 variations of my reference ad at ~/Downloads/ref.mp4. Same claims, more realistic, Hindi.">Variations of a reference ad</button>
+            <button class="chip" data-brief="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny.">Diwali spot for a delivery app</button>
+            <button class="chip" data-brief="Three 9:16 Reels for a chai brand, one per city: Mumbai, Chennai, Kolkata, in their own languages.">Regional Reels for a chai brand</button>
+          </div>
+          <div class="or">or <button class="linkish" id="empty-open">open an existing project folder</button></div>
+        </div>
+
+        <div class="work hidden" id="work">
+          <div class="viewer">
+            <div class="viewer-bar">
+              <div class="tabs" id="film-tabs"></div>
+              <div class="seg" id="variant"><button data-v="with-text" class="on">With text</button><button data-v="clean">Clean</button><button data-v="film">Film</button></div>
+            </div>
+            <div class="screen" id="screen"><video id="video" controls playsinline></video><div class="preview" id="preview"></div><img id="still" class="hidden" alt="" /><div class="screen-empty" id="screen-empty">Films appear here as Director makes them.</div></div>
+          </div>
+
+          <div class="timeline" id="timeline">
+            <div class="tl-bar">
+              <h3>Timeline</h3>
+              <span class="tl-time" id="tl-time">0:00.0</span>
+              <div class="row">
+                <span class="edit-state" id="edit-state"></span>
+                <button class="btn sm plain" id="add-callout" title="Add a text callout at the playhead"><i class="ico" style="--i: url(icons/plus.svg)"></i>Callout</button>
+                <button class="btn sm plain" id="add-card" title="Add a UI card at the playhead"><i class="ico" style="--i: url(icons/plus.svg)"></i>Card</button>
+                <button class="btn sm plain" id="undo" title="Undo (⌘Z)" disabled><i class="ico" style="--i: url(icons/arrow-counter-clockwise.svg)"></i>Undo</button>
+                <button class="btn sm plain" id="tl-refresh" title="Rebuild the timeline from the project files"><i class="ico" style="--i: url(icons/arrows-clockwise.svg)"></i>Refresh</button>
+                <button class="btn sm plain" id="vlm-run" title="Gemini VLM check of the film in the viewer"><i class="ico" style="--i: url(icons/eye.svg)"></i>VLM check</button>
+                <button class="btn sm" id="save-render" disabled>Save and render</button>
+              </div>
+            </div>
+            <div class="tl-body" id="tl-body">
+              <div class="tl-labels" id="tl-labels"></div>
+              <div class="tl-lanes" id="tl-lanes"><div class="tl-ruler" id="tl-ruler"></div><div class="tl-tracks" id="tl-tracks"></div><div class="tl-head" id="tl-head"></div></div>
+            </div>
+            <div class="lockbar hidden" id="lockbar">Director is working on this project. Editing unlocks when it finishes, or press stop.</div>
+            <div class="inspector hidden" id="inspector"></div>
+            <div class="vlm hidden" id="vlm"></div>
+          </div>
+
+          <div class="media" id="media"></div>
+        </div>
+      </section>
+
+      <aside class="chat">
+        <div class="chat-head"><h2>Director</h2><button class="btn sm plain" id="chat-new" title="Start a fresh conversation for this project">New chat</button></div>
+        <div class="msgs" id="msgs"><div class="hint">Open a project to start. Director runs on your own Claude Code, with your plugins, skills and MCPs.</div></div>
+        <form class="composer" id="composer">
+          <div class="box">
+            <textarea id="input" rows="3" placeholder="Ask Director" disabled></textarea>
+            <div class="box-bar"><span class="muted" id="chat-status"></span>
+              <div class="row">
+                <button type="button" class="round hidden" id="stop" aria-label="Stop"><i class="ico" style="--i: url(icons/stop.svg)"></i></button>
+                <button class="round" id="send" aria-label="Send" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </aside>
+    </main>
+
+    <!-- first-run onboarding -->
+    <div class="ob hidden" id="onboard">
+      <div class="ob-top"><button class="btn sm plain" id="ob-skip">Skip setup</button></div>
+      <div class="ob-main">
+        <div class="ob-step" data-step="1">
+          <div class="ob-count">Step 1 of 3</div>
+          <h1>Connect Claude Code</h1>
+          <p>Director runs on your own Claude Code: your login, plugins, skills and MCP servers. Nothing is sent anywhere else.</p>
+          <div class="check-row" id="ob-claude"><i class="ico" style="--i: url(icons/circle-notch.svg)"></i><span>Looking for Claude Code…</span></div>
+          <div class="cmd hidden" id="ob-claude-install"><code>npm install -g @anthropic-ai/claude-code</code><button class="btn sm ghost" data-copy="npm install -g @anthropic-ai/claude-code">Copy</button></div>
+          <div class="row"><button class="btn ghost" id="ob-claude-test">Test connection</button><span class="status inline" id="ob-claude-ping"></span></div>
+          <div class="ob-foot"><span></span><button class="btn" data-go="2">Continue</button></div>
+        </div>
+
+        <div class="ob-step hidden" data-step="2">
+          <div class="ob-count">Step 2 of 3</div>
+          <h1>Connect a media MCP</h1>
+          <p>Director generates plates and films through a media MCP server. Connect one or more; you can add others later in Settings.</p>
+          <div class="opt" id="ob-aistudio">
+            <div class="opt-head"><b>AI Studio MCP</b><span class="state" data-state>Not connected</span></div>
+            <p>Galleri5 AI Studio's Model Garden: Seedance, Veo, Kling, Nano Banana and more. Runs locally with uvx and signs in with Google. Needs an AI Studio account.</p>
+            <div class="row"><button class="btn sm" data-act="connect">Connect</button><button class="btn sm ghost hidden" data-act="signin">Sign in</button></div>
+          </div>
+          <div class="opt" id="ob-higgsfield">
+            <div class="opt-head"><b>Higgsfield MCP</b><span class="state" data-state>Not connected</span></div>
+            <p>Higgsfield's hosted server (Soul, Veo, Kling, Seedance and others). Added to your Claude Code, which handles the Higgsfield sign-in.</p>
+            <div class="row"><button class="btn sm" data-act="connect">Connect</button><button class="btn sm ghost hidden" data-act="check">Check status</button></div>
+            <div class="cmd hidden" data-signin><code>claude</code><span class="muted">then type</span><code>/mcp</code><span class="muted">and pick higgsfield to sign in</span></div>
+          </div>
+          <div class="opt" id="ob-custom">
+            <div class="opt-head"><b>Another MCP server</b><span class="state" data-state></span></div>
+            <p>fal, Replicate, Runway, your own: any stdio or HTTP server in Claude Code's mcpServers format.</p>
+            <div class="row"><button class="btn sm ghost" data-act="custom">Add in Settings</button></div>
+          </div>
+          <div class="ob-foot"><button class="btn plain" data-go="1">Back</button><button class="btn" data-go="3">Continue</button></div>
+        </div>
+
+        <div class="ob-step hidden" data-step="3">
+          <div class="ob-count">Step 3 of 3</div>
+          <h1>Add Gemini for VLM checks <span class="tag">optional</span></h1>
+          <p>A Gemini key lets you run a second-opinion video check on any take: dialogue timings plus a glitch report on the timeline. Claude Code reviews contact sheets on its own, so you can skip this.</p>
+          <label>Gemini API key <input id="ob-gemini-key" type="password" placeholder="AIza…" autocomplete="off" /></label>
+          <div class="row"><button class="btn ghost" id="ob-gemini-save">Save and test</button><span class="status inline" id="ob-gemini-status"></span></div>
+          <div class="ob-foot"><button class="btn plain" data-go="2">Back</button><button class="btn" id="ob-done">Start making films</button></div>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="settings">
+      <div class="dlg">
+        <nav class="dlg-nav" id="dlg-nav">
+          <h2>Settings</h2>
+          <button data-sec="sec-claude" class="on">Claude Code</button>
+          <button data-sec="sec-media">Media MCPs</button>
+          <button data-sec="sec-gemini">Gemini</button>
+          <button data-sec="sec-general">General</button>
+        </nav>
+        <div class="dlg-main">
+          <div class="dlg-head"><form method="dialog"><button class="icon" aria-label="Close"><i class="ico" style="--i: url(icons/x.svg)"></i></button></form></div>
+          <div class="dlg-body">
+            <section id="sec-claude">
+              <h3>Claude Code</h3>
+              <p>Director runs your own Claude Code: same login, plugins, skills and MCPs. The Director plugin is added to every chat.</p>
+              <div class="status" id="claude-status">Checking…</div>
+              <label>Path to claude <input id="s-claudePath" placeholder="Detected automatically" /></label>
+              <label class="check"><input type="checkbox" id="s-ignoreApiEnv" /> Use my Claude login and ignore ANTHROPIC_*, Bedrock, Vertex and Foundry variables</label>
+              <div class="grid2">
+                <label>Permissions <select id="s-permissionMode"><option value="bypassPermissions">Full access in the project (recommended)</option><option value="acceptEdits">Edits only, shell commands blocked</option><option value="default">Ask (blocks in headless mode)</option></select></label>
+                <label>Model <input id="s-model" placeholder="Claude Code default" /></label>
+              </div>
+              <div class="row"><button type="button" class="btn sm" id="claude-test">Test connection</button></div>
+            </section>
+            <section id="sec-media" class="hidden">
+              <h3>Media MCPs</h3>
+              <p>Servers here are passed to Director with <code>--mcp-config</code>. Servers already in your Claude Code (like Higgsfield after setup) load on their own. Add <code>"enabled": false</code> to keep one without loading it.</p>
+              <div class="row"><select id="mcp-template" style="width:auto"><option value="">Add a template…</option><option value="aistudio">AI Studio MCP (stdio, uvx)</option><option value="stdio">Custom stdio server</option><option value="http">Custom HTTP server</option></select><button type="button" class="btn sm ghost" id="mcp-import">Import from Claude Code</button></div>
+              <textarea id="s-mcp" rows="10" spellcheck="false"></textarea>
+              <div class="row"><button type="button" class="btn sm" id="mcp-save">Save</button></div>
+              <ul class="servers" id="servers"></ul>
+            </section>
+            <section id="sec-gemini" class="hidden">
+              <h3>Google Gemini <span class="tag">optional</span></h3>
+              <p>For VLM checks on takes: dialogue timings plus a glitch report. Claude Code reviews contact sheets on its own, so this is a second opinion. The key is stored in your macOS keychain.</p>
+              <div class="grid2">
+                <label>API key <input id="s-geminiKey" type="password" placeholder="AIza…" autocomplete="off" /></label>
+                <label>Model <input id="s-geminiModel" /></label>
+              </div>
+              <div class="row"><button type="button" class="btn sm" id="gemini-save">Save</button><button type="button" class="btn sm ghost" id="gemini-test">Test</button><button type="button" class="btn sm plain" id="gemini-clear">Remove key</button><span class="status inline" id="gemini-status"></span></div>
+            </section>
+            <section id="sec-general" class="hidden">
+              <h3>General</h3>
+              <label>Projects folder <input id="s-projectsRoot" /></label>
+              <label>Director plugin folder <input id="s-pluginDir" /></label>
+              <div class="row"><button type="button" class="btn sm" id="general-save">Save</button><button type="button" class="btn sm ghost" id="rerun-setup">Run setup again</button></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
