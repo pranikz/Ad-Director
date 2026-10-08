@@ -1,0 +1,122 @@
+[
+ {
+  "name": "f1_lead",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Harbhajan Singh, 58, heavyset Sikh electrical-goods shopkeeper from Old Delhi with a big round belly, grey-white beard neatly rolled under the chin, small navy blue turban, thick reading glasses hanging on a black cord around his neck, half-sleeve cream terry-cotton shirt with two pens in the pocket, steel kara on wrist, a mole on his left cheek, deep laugh lines, tired kind eyes, unhurried calm expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f1_support",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Chhotu, 19, very skinny shop helper from Bihar, dark skin, sharp cheekbones, patchy thin moustache, oiled side-parted hair, oversized faded maroon T-shirt with a cracked blank print, a cloth bandage on one finger, anxious wide-eyed expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f2_lead",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Meenal Shah, 33, Gujarati textile shop owner, short and plump, dusky wheatish skin with dark under-eye circles, round face, thick black-rimmed spectacles, hair in a messy bun with a pencil stuck through it, small nose pin, faded mustard cotton kurta with sleeves pushed up, holding a cheap grey calculator, stressed but sharp expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f2_support",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Pareshbhai, 74, frail thin old munim (shop accountant), bald head with a fringe of white hair, large ears, very thick black-framed glasses, white khadi kurta, paan-stained lips, sitting cross-legged holding a red cloth-bound ledger, dry unimpressed expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f3_lead",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Balwant Yadav, 63, ex-akhada wrestler who now owns a basement gym, short and barrel-chested with a big round belly and thick hairy forearms, cauliflower ears, shaved head with grey stubble, huge white handlebar moustache, white sleeveless cotton vest, maroon track pants, red sacred thread on wrist, thin gold chain, amused squinting expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f3_support",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Rohit, 22, lanky skinny-fat gym beginner, pale wheatish skin with acne on his cheeks, gelled spiky hair, oversized neon green stringer vest hanging off bony shoulders, wired earphones around his neck, nervous strained expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f4_lead",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Bunty, 38, wedding photographer, very tall and wiry, long black hair with grey streaks in a low ponytail, goatee, deep-set tired eyes, sweaty forehead, black polo shirt and black cargo trousers, two DSLR cameras crossed on body straps, gaffer tape wrapped on his wrist, frazzled half-grin.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f4_support",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary casting photograph, waist-up, subject facing camera at a slight three-quarter angle, standing against a plain weathered off-white plaster wall, soft natural window light from one side, shot on a 50mm lens at f/2.8. Real ordinary Indian person, not a model: true skin texture with pores, blemishes, uneven tone, sweat sheen, stray hairs, no makeup look, no beautification. Natural colour, slight film grain. No text, no logos, no watermark. Subject: Pinky, 24, wedding photographer's assistant, short and round, dark curly hair tied up messily, metal braces on her teeth, oversized black hoodie with sleeves rolled, gripping a big LED light panel on a stand, energetic expression.",
+   "aspect_ratio": "3:4",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f1_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a tiny 8x10 ft electrical goods shop in Bhagirath Palace, Old Delhi, at dusk. Walls stacked floor to ceiling with plain cardboard switch boxes, coils of red and yellow wire, circuit breakers, hanging LED bulbs; a glass display counter with a steel glass of chai and a wooden stool behind it; a framed devotional picture; through the open shutter a narrow lane with a dense tangle of overhead electric wires and other cramped shops glowing with tube lights.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f2_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a traditional textile wholesale shop in Surat during Diwali season. White mattress gaddi floor seating with round bolsters, shelves of saree and fabric bolts in every colour stacked to the ceiling, marigold torans over the entrance, a small brass diya on a low wooden counter, tube lights and a ceiling fan, cardboard parcels tied with twine on the floor.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f3_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a cramped basement gym in East Delhi with a low ceiling, buzzing tube lights, rusty iron weight plates, home-welded benches and a squat rack, cracked mirrors with peeling stickers, faded posters of wrestlers, a wooden front desk with a thick register book and a plastic stool, a small Hanuman picture, worn rubber floor mats.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f4_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a North Indian wedding lawn late at night after the guests have left: canopy of marigold strings and warm fairy lights, round tables with crumpled white covers, scattered plastic chairs, an ornate floral stage, a DJ console with speakers, paper plates and petals on the grass, some lights still on.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ }
+]

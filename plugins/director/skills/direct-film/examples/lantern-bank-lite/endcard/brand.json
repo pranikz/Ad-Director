@@ -1,0 +1,64 @@
+{
+ "colors": {
+  "primary": "#1f3a5f",
+  "accent": "#e8590c",
+  "rule": "#1f3a5f",
+  "offerBg": [
+   "#ffffff",
+   "#f3f6fa",
+   "#e8eef6"
+  ]
+ },
+ "offer": {
+  "pill": "Lantern <b>Lite</b> Current Account",
+  "toggle": "Auto Sweep",
+  "eyebrow": "UP TO",
+  "value": "6%",
+  "suffix": "p.a.*",
+  "chips": [
+   {
+    "icon": "calendar",
+    "title": "9-month",
+    "sub": "tenure"
+   },
+   {
+    "icon": "rupee",
+    "title": "₹25,000",
+    "sub": "AMB"
+   },
+   {
+    "icon": "unlock",
+    "title": "No lock-in",
+    "sub": "withdraw anytime"
+   }
+  ],
+  "tagline": "Small balance. <em>Serious returns.</em>"
+ },
+ "pack": {
+  "logo": "assets/lantern-logo.svg",
+  "logoAlt": "Lantern Bank (fictional)",
+  "art": "",
+  "hills": true,
+  "lines": [
+   {
+    "t": 4.25,
+    "html": "This festive season, open a"
+   },
+   {
+    "t": 5.55,
+    "html": "Lantern Lite Current Account",
+    "accent": true
+   },
+   {
+    "t": 7.2,
+    "html": "and let your idle balance earn."
+   }
+  ],
+  "rule": [
+   "LIGHT ON BALANCE",
+   "BRIGHT ON RETURNS"
+  ],
+  "ruleAt": 8.1
+ },
+ "disclaimer": "*T&amp;C apply. Interest rates are subject to periodic changes."
+}

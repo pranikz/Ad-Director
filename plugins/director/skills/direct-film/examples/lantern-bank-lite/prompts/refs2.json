@@ -1,0 +1,42 @@
+[
+ {
+  "name": "f5_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a roadside chai tapri on a corner of a Mumbai bus depot at dawn: dented aluminium kettles on a kerosene stove, glass tumblers in a wire rack, unlabelled glass biscuit jars, a cracked wooden bench, a wet road, sodium streetlight fading into blue dawn, steam.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f6_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a narrow Mumbai chawl courtyard at dusk: three-storey chawl with long balconies and laundry lines, a chalk-drawn wicket on the wall, a plastic chair, a tiny sports-goods shop at the corner with bats and tennis balls hanging, tube lights just flickering on.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f7_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a cramped home kitchen in an old Pune wada run as a tiffin service at noon: stacks of steel tiffin carriers, a big pressure cooker on a gas stove, chapati dough on a steel plate, cloth delivery bags, window light on a worn stone floor.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ },
+ {
+  "name": "f8_loc",
+  "model": "google/nano-banana-2.1",
+  "fields": {
+   "prompt": "Unretouched documentary location photograph, wide 24mm lens, eye level, real lived-in place in India, natural and practical light only, honest clutter, dust and wear, slight film grain. No people. No readable text, no brand names, no logos, no watermark. Location: a narrow 24-hour medical store in Lucknow at 3 a.m.: glass-fronted shelves of medicine boxes with no readable labels, a folding canvas cot behind the counter, a single tube light, a bell button beside the half-open shutter, a steel water bottle, a curl of mosquito-coil smoke.",
+   "aspect_ratio": "16:9",
+   "resolution": "2K",
+   "output_format": "jpeg"
+  }
+ }
+]

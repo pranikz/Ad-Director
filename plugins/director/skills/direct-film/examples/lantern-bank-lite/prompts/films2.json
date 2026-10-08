@@ -1,0 +1,58 @@
+[
+ {
+  "name": "film5_light_chai",
+  "model": "byteplus/seedance-2.5",
+  "fields": {
+   "prompt": "FILM: 15 seconds, 16:9, four shots joined by hard cuts.\nREFERENCE: Image 1 = the location, the dawn chai tapri at the Mumbai bus depot. Match its set dressing, layout and light exactly.\nCAST:\n- ANNA: Murugan, 56, Tamil tea-stall owner in Mumbai, wiry and very dark-skinned, grey stubble, thick grey moustache, three stripes of vibhuti on his forehead, checked lungi folded up at the knee, faded white vest, a towel over one shoulder, one gold-capped front tooth, fast sure hands.\n- AUTO-WALA: a chubby young auto-rickshaw driver with a bushy beard in a khaki uniform.\n- GIRL: a tall lean college student with short cropped hair, a nose ring and a backpack.\n- UNCLE: a bony old man in a monkey cap and a sweater vest.\n\nSHOT 1 (0-4s): Dawn rush at the tapri, steam everywhere. The Auto-wala leans in: \"अन्ना, एक लाइट चाय!\" The Girl right behind him: \"मेरी शक्कर लाइट!\"\nSHOT 2 (4-8s): The Uncle, sheepish, holding out his glass: \"अन्ना, कल का उधार... लाइट ले ना।\" Anna laughs and does the long show-off pour, tea arcing a metre from kettle to glass.\nSHOT 3 (8-11s): Close on Anna: the phone in his vest pocket pings and glows through the cloth. He glances down, and the gold tooth flashes in a grin.\nSHOT 4 (11-15s): Anna wipes a glass with his towel, unhurried, and says: \"यहाँ सब लाइट चलता है... बस कमाई फुल।\" Hold on Anna.\n\nLOOK: live-action Indian TV commercial shot as an observational slice-of-life comedy. ARRI Alexa 35 with vintage Cooke S4 lenses, handheld with gentle operator drift, natural and practical light only, realistic exposure with real shadows and soft highlight roll-off, subtle 35mm film grain, true-to-life skin with pores, sweat and blemishes. Performances understated and naturalistic, dry comic timing. Every person looks exactly as their CAST description: ordinary, real, not glamorous.\nSOUND: sync-sound dialogue in Hindi with natural regional Indian accents, lips matched to speech, real location ambience. No music, no narrator.\nRULES: no on-screen text, subtitles, captions, logos or watermarks. Phone screens always face away from camera or show only a soft glow. No slow motion, no beauty lighting, no lens flares, no morphing faces or bodies, natural hands. The last second of the film is a held frame with no new action.",
+   "image_urls": [
+    "@f5_loc"
+   ],
+   "ratio": "16:9",
+   "resolution": "1080p",
+   "duration": 15,
+   "generate_audio": true
+  }
+ },
+ {
+  "name": "film6_bad_light",
+  "model": "byteplus/seedance-2.5",
+  "fields": {
+   "prompt": "FILM: 15 seconds, 16:9, four shots joined by hard cuts.\nREFERENCE: Image 1 = the location, the Mumbai chawl courtyard at dusk. Match its set dressing, layout and light exactly.\nCAST:\n- KAKA: Vasant, 61, owner of the corner sports-goods shop who umpires the evening gully cricket, very short and plump with a round belly, bald on top with white hair at the sides, thick black-framed spectacles, white half-sleeve shirt tucked into grey trousers, a whistle on a string around his neck.\n- THE BOYS: five neighbourhood boys aged about 12-14, all different: one scrawny with oversized glasses and a gap tooth holding the bat, one tall and gangly bowler, one round-faced in a faded football jersey.\n\nSHOT 1 (0-3s): The gangly boy runs in to bowl a tennis ball; Kaka, standing as umpire, throws both arms up and blows his whistle: \"बैड लाइट! मैच ख़त्म!\"\nSHOT 2 (3-7s): The boys crowd him, protesting in chorus: \"काका, अभी तो छह भी नहीं बजे!\"\nSHOT 3 (7-11s): Kaka's phone pings in his shirt pocket. He looks at it, pushes his glasses up, and smiles: \"छह बजे न बजे... मेरा पैसा तो छक्के मार रहा है।\"\nSHOT 4 (11-15s): Behind his back the scrawny boy whacks the ball high over the balconies; the boys scream \"छक्का!\" and Kaka turns, shaking his head, grinning. Hold on Kaka.\n\nLOOK: live-action Indian TV commercial shot as an observational slice-of-life comedy. ARRI Alexa 35 with vintage Cooke S4 lenses, handheld with gentle operator drift, natural and practical light only, realistic exposure with real shadows and soft highlight roll-off, subtle 35mm film grain, true-to-life skin with pores, sweat and blemishes. Performances understated and naturalistic, dry comic timing. Every person looks exactly as their CAST description: ordinary, real, not glamorous.\nSOUND: sync-sound dialogue in Hindi with natural regional Indian accents, lips matched to speech, real location ambience. No music, no narrator.\nRULES: no on-screen text, subtitles, captions, logos or watermarks. Phone screens always face away from camera or show only a soft glow. No slow motion, no beauty lighting, no lens flares, no morphing faces or bodies, natural hands. The last second of the film is a held frame with no new action.",
+   "image_urls": [
+    "@f6_loc"
+   ],
+   "ratio": "16:9",
+   "resolution": "1080p",
+   "duration": 15,
+   "generate_audio": true
+  }
+ },
+ {
+  "name": "film7_light_lunch",
+  "model": "byteplus/seedance-2.5",
+  "fields": {
+   "prompt": "FILM: 15 seconds, 16:9, four shots joined by hard cuts.\nREFERENCE: Image 1 = the location, the Pune wada tiffin kitchen at noon. Match its set dressing, layout and light exactly.\nCAST:\n- TAI: Sushma, 64, Maharashtrian home-tiffin business owner, tall and big-boned with strong arms, grey hair in a tight bun, a large round red bindi, nine-yard cotton saree tucked at the waist, reading glasses pushed up on her head, flour on her hands, a stern face that cracks into a big laugh.\n- RAJU: her delivery man, 30, short and stocky with a round face, still wearing his scooter helmet, out of breath.\n\nSHOT 1 (0-4s): Noon chaos, the pressure cooker whistles. Tai rolls chapatis at speed while her phone on speaker plays a young man's voice: \"ताई, आज से मेरा लंच लाइट भेजना... डाइट पे हूँ।\"\nSHOT 2 (4-7s): Tai rolls her eyes, says \"डाइट! हुं।\" and pointedly slaps two extra chapatis into his tiffin.\nSHOT 3 (7-11s): Raju bursts in: \"ताई, पेट्रोल के पैसे?\" Tai taps her phone once with a floury finger; Raju's phone pings; he nods: \"आ गए।\"\nSHOT 4 (11-15s): Tai snaps the tiffin shut and says, dry: \"लंच लाइट हो सकता है... कमाई नहीं।\" Raju laughs. Hold on Tai.\n\nLOOK: live-action Indian TV commercial shot as an observational slice-of-life comedy. ARRI Alexa 35 with vintage Cooke S4 lenses, handheld with gentle operator drift, natural and practical light only, realistic exposure with real shadows and soft highlight roll-off, subtle 35mm film grain, true-to-life skin with pores, sweat and blemishes. Performances understated and naturalistic, dry comic timing. Every person looks exactly as their CAST description: ordinary, real, not glamorous.\nSOUND: sync-sound dialogue in Hindi with natural regional Indian accents, lips matched to speech, real location ambience. No music, no narrator.\nRULES: no on-screen text, subtitles, captions, logos or watermarks. Phone screens always face away from camera or show only a soft glow. No slow motion, no beauty lighting, no lens flares, no morphing faces or bodies, natural hands. The last second of the film is a held frame with no new action.",
+   "image_urls": [
+    "@f7_loc"
+   ],
+   "ratio": "16:9",
+   "resolution": "1080p",
+   "duration": 15,
+   "generate_audio": true
+  }
+ },
+ {
+  "name": "film8_light_sleep",
+  "model": "byteplus/seedance-2.5",
+  "fields": {
+   "prompt": "FILM: 15 seconds, 16:9, four shots joined by hard cuts.\nREFERENCE: Image 1 = the location, the 24-hour medical store in Lucknow at 3 a.m.. Match its set dressing, layout and light exactly.\nCAST:\n- DADA: Mr. Dutta, 67, Bengali chemist who runs a 24-hour medical store, very thin and slightly stooped, long face, big ears, white hair combed back, half-moon reading glasses, a monkey cap pushed up on his head, a grey cardigan over a kurta.\n- FATHER: a frantic young father, 28, lanky, in a vest and pyjamas with uncombed hair, holding a crumpled prescription.\n\nSHOT 1 (0-3s): 3 a.m. Dada sleeps on the folding cot behind the counter, glasses on his chest, snoring softly. The shop bell buzzes once.\nSHOT 2 (3-7s): Dada is instantly upright, glasses on, already reaching to the shelf. The Father at the counter: \"दादा, बच्चे को बुखार है...\" Dada hands over a box: \"ये लो। दो चम्मच, सुबह फिर आना।\"\nSHOT 3 (7-11s): The Father, amazed: \"दादा, आप सोते भी हो?\" Dada, deadpan: \"मेरी नींद लाइट है।\"\nSHOT 4 (11-15s): Dada lies back down on the cot. On the shelf his phone pings and glows; eyes closed, he smiles: \"पैसा तो गहरी नींद में भी कमाता है।\" Hold on Dada.\n\nLOOK: live-action Indian TV commercial shot as an observational slice-of-life comedy. ARRI Alexa 35 with vintage Cooke S4 lenses, handheld with gentle operator drift, natural and practical light only, realistic exposure with real shadows and soft highlight roll-off, subtle 35mm film grain, true-to-life skin with pores, sweat and blemishes. Performances understated and naturalistic, dry comic timing. Every person looks exactly as their CAST description: ordinary, real, not glamorous.\nSOUND: sync-sound dialogue in Hindi with natural regional Indian accents, lips matched to speech, real location ambience. No music, no narrator.\nRULES: no on-screen text, subtitles, captions, logos or watermarks. Phone screens always face away from camera or show only a soft glow. No slow motion, no beauty lighting, no lens flares, no morphing faces or bodies, natural hands. The last second of the film is a held frame with no new action.",
+   "image_urls": [
+    "@f8_loc"
+   ],
+   "ratio": "16:9",
+   "resolution": "1080p",
+   "duration": 15,
+   "generate_audio": true
+  }
+ }
+]

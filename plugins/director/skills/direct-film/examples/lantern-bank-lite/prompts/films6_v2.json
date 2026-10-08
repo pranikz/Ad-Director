@@ -1,0 +1,16 @@
+[
+ {
+  "name": "film6_bad_light_v2",
+  "model": "byteplus/seedance-2.5",
+  "fields": {
+   "prompt": "FILM: 15 seconds, 16:9, four shots joined by hard cuts.\nREFERENCE: Image 1 = the location, the Mumbai chawl courtyard at dusk. Match its set dressing, layout and light exactly.\nCAST:\n- KAKA: Vasant, 61, owner of the corner sports-goods shop who umpires the evening gully cricket, very short and plump with a round belly, bald on top with white hair at the sides, thick black-framed spectacles, white half-sleeve shirt tucked into grey trousers, a whistle on a string around his neck.\n- THE BOYS: five neighbourhood boys aged about 12-14, all fully dressed in plain faded cotton T-shirts and shorts with no prints, numbers, logos or text: one scrawny with oversized glasses and a gap tooth holding the bat (plain blue T-shirt), one tall and gangly bowler (plain yellow T-shirt), one round-faced (plain grey T-shirt).\n\nSHOT 1 (0-3s): The gangly boy runs in to bowl a tennis ball; Kaka, standing as umpire, throws both arms up and blows his whistle: \"बैड लाइट! मैच ख़त्म!\"\nSHOT 2 (3-7s): The boys crowd him, protesting in chorus: \"काका, अभी तो छे भी नहीं बजे! (six o'clock — the number six, not four)\"\nSHOT 3 (7-11s): Kaka's phone pings in his shirt pocket. He looks at it, pushes his glasses up, and smiles: \"छे बजे न बजे... मेरा पैसा तो छक्के मार रहा है। (again the number six)\"\nSHOT 4 (11-15s): Behind his back the scrawny boy whacks the ball high over the balconies; the boys scream \"छक्का!\" and Kaka turns, shaking his head, grinning. Hold on Kaka.\n\nLOOK: live-action Indian TV commercial shot as an observational slice-of-life comedy. ARRI Alexa 35 with vintage Cooke S4 lenses, handheld with gentle operator drift, natural and practical light only, realistic exposure with real shadows and soft highlight roll-off, subtle 35mm film grain, true-to-life skin with pores, sweat and blemishes. Performances understated and naturalistic, dry comic timing. Every person looks exactly as their CAST description: ordinary, real, not glamorous.\nSOUND: sync-sound dialogue in Hindi with natural regional Indian accents, lips matched to speech, real location ambience. No music, no narrator.\nRULES: no on-screen text, subtitles, captions, logos or watermarks. Phone screens always face away from camera or show only a soft glow. No slow motion, no beauty lighting, no lens flares, no morphing faces or bodies, natural hands. The last second of the film is a held frame with no new action.\nEXTRA RULE: every child is fully clothed in plain unbranded clothes; the number spoken is six (छे), never four.",
+   "image_urls": [
+    "@f6_loc"
+   ],
+   "ratio": "16:9",
+   "resolution": "1080p",
+   "duration": 15,
+   "generate_audio": true
+  }
+ }
+]
