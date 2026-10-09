@@ -247,6 +247,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 .servers li small { grid-column: 1 / -1; color: var(--text-3); overflow-wrap: anywhere; font-size: 12px; }
 .servers li small.ok { color: var(--ok); } .servers li small.bad { color: var(--bad); }
 
+/* about */
+.about-head { display: flex; align-items: center; gap: 14px; }
+.about-icon { width: 56px; height: 56px; border-radius: 14px; }
+.about-head h3 { font-size: 18px; }
+.about-list { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+.about-list dt { color: var(--text-3); }
+.about-list dd { color: var(--text); font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.about-foot { font-size: 12px; line-height: 1.6; }
+a.btn { text-decoration: none; }
+
 /* Claude account chooser */
 .acct { display: grid; gap: 8px; }
 .acct:empty { display: none; }

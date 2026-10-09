@@ -22,4 +22,6 @@ contextBridge.exposeInMainWorld("director", {
   edit: { getCfg: call("cfg:get"), saveCfg: call("cfg:save"), render: call("render"), useTake: call("take:use") },
   onProjectChanged: on("project:changed"),
   openExternal: call("open:external"),
+  about: call("app:about"),
+  revealPlugin: call("app:revealPlugin"),
 });

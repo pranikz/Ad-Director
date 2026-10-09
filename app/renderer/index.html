@@ -156,6 +156,7 @@
           <button data-sec="sec-media">Media MCPs</button>
           <button data-sec="sec-gemini">Gemini</button>
           <button data-sec="sec-general">General</button>
+          <button data-sec="sec-about">About</button>
         </nav>
         <div class="dlg-main">
           <div class="dlg-head"><form method="dialog"><button class="icon" aria-label="Close"><i class="ico" style="--i: url(icons/x.svg)"></i></button></form></div>
@@ -194,6 +195,21 @@
               <label>Projects folder <input id="s-projectsRoot" /></label>
               <label>Director plugin folder <input id="s-pluginDir" /></label>
               <div class="row"><button type="button" class="btn sm" id="general-save">Save</button><button type="button" class="btn sm ghost" id="rerun-setup">Run setup again</button></div>
+            </section>
+            <section id="sec-about" class="hidden">
+              <div class="about-head">
+                <img class="about-icon" src="icons/app-icon.png" alt="" />
+                <div><h3>Director</h3><div class="muted" id="about-version">Version</div></div>
+              </div>
+              <p>An AI ad-film director for Claude Code. It writes the stories, casts people who look real, generates every shot through your media MCP, checks each take and adds the motion graphics. Open source under the MIT license.</p>
+              <div class="row">
+                <a class="btn sm ghost" id="about-repo" data-ext href="https://github.com/pranikz/Ad-Director">GitHub</a>
+                <a class="btn sm ghost" id="about-issues" data-ext href="https://github.com/pranikz/Ad-Director/issues">Report an issue</a>
+                <a class="btn sm plain" id="about-license" data-ext href="https://github.com/pranikz/Ad-Director/blob/main/LICENSE">MIT license</a>
+              </div>
+              <dl class="about-list" id="about-list"></dl>
+              <div class="row"><button type="button" class="btn sm ghost" id="about-copy">Copy diagnostics</button><button type="button" class="btn sm plain" id="about-plugin">Show plugin folder</button><span class="status inline" id="about-status"></span></div>
+              <p class="muted about-foot">Built with Electron, HyperFrames and Phosphor Icons. Lettering fonts from Google Fonts (OFL). Not affiliated with Anthropic, Google, Higgsfield or any media provider.<br />© 2026 Pratyush Mahapatra</p>
             </section>
           </div>
         </div>

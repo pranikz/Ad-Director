@@ -429,7 +429,28 @@ function renderServers() {
     li.append(btn, out); ul.append(li);
   }
 }
+async function renderAbout() {
+  const [a, st] = await Promise.all([D.about(), S.status ? Promise.resolve(S.status) : D.claude.status()]);
+  $("about-version").textContent = `Version ${a.version}${a.packaged ? "" : " (running from source)"}`;
+  if (a.homepage) { $("about-repo").href = a.homepage; $("about-license").href = `${a.homepage}/blob/main/LICENSE`; }
+  if (a.bugs) $("about-issues").href = a.bugs;
+  const rows = [
+    ["Director plugin", a.pluginVersion ? `${a.pluginVersion}` : "not found"],
+    ["Plugin folder", a.pluginDir.replace(/^\/Users\/[^/]+/, "~")],
+    ["Claude Code", st?.ok ? `${st.version.replace(/\s*\(Claude Code\)/, "")}, using ${st.using}` : "not found"],
+    ["Electron", `${a.electron} (Chromium ${a.chrome}, Node ${a.node})`],
+    ["System", a.os],
+  ];
+  $("about-list").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  // diagnostics leave out the account (email) on purpose, so they're safe to paste into a public issue
+  S.diagnostics = [`Director ${a.version}${a.packaged ? "" : " (source)"}`, `Plugin ${a.pluginVersion || "not found"}`,
+    `Claude Code ${st?.ok ? st.version.replace(/\s*\(Claude Code\)/, "") : "not found"}`, `Account type ${S.settings.authResolved}`,
+    `Electron ${a.electron}, Chromium ${a.chrome}, Node ${a.node}`, `System ${a.os}`].join("\n");
+}
+$("about-copy").onclick = async () => { await D.copy(S.diagnostics || ""); $("about-status").className = "status inline ok"; $("about-status").textContent = "Copied"; setTimeout(() => ($("about-status").textContent = ""), 1500); };
+$("about-plugin").onclick = () => D.revealPlugin();
 function showSec(id) {
+  if (id === "sec-about") renderAbout();
   document.querySelectorAll("#dlg-nav button").forEach((b) => b.classList.toggle("on", b.dataset.sec === id));
   document.querySelectorAll(".dlg-body section").forEach((x) => x.classList.toggle("hidden", x.id !== id));
 }

@@ -219,6 +219,15 @@ function createWindow() {
   });
   h("projects:reveal", ({ dir, rel }) => shell.showItemInFolder(path.join(dir, rel || "")));
   h("open:external", ({ url }) => /^https?:/.test(url) && shell.openExternal(url));
+  h("app:about", () => {
+    const pkg = require("./package.json");
+    let plugin = {};
+    try { plugin = JSON.parse(fs.readFileSync(path.join(pluginDir(), ".claude-plugin", "plugin.json"), "utf8")); } catch {}
+    return { name: app.getName(), version: app.getVersion(), homepage: pkg.homepage, bugs: pkg.bugs?.url, license: pkg.license, author: pkg.author,
+      pluginVersion: plugin.version || null, pluginDir: pluginDir(), electron: process.versions.electron, chrome: process.versions.chrome,
+      node: process.versions.node, os: `${process.platform} ${process.getSystemVersion?.() || ""} ${process.arch}`.trim(), packaged: app.isPackaged };
+  });
+  h("app:revealPlugin", () => shell.showItemInFolder(path.join(pluginDir(), ".claude-plugin", "plugin.json")));
 
   h("chat:send", ({ dir, text }) => { sessionFor(dir, win).send(text); return { ok: true }; });
   h("chat:stop", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); return { ok: true }; });
