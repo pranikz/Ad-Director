@@ -77,7 +77,11 @@ label.check input { width: auto; accent-color: var(--primary); }
 .pill.ok i { background: var(--ok); opacity: 1; } .pill.warn i { background: var(--warn); opacity: 1; } .pill.bad i { background: var(--bad); opacity: 1; }
 
 /* layout */
-.app { height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) 408px; }
+.app { height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) 408px; overflow: hidden; transition: grid-template-columns .5s cubic-bezier(.22,1,.36,1); }
+/* home (no project open): no chat panel; it slides in from the right when a project opens */
+.app.home { grid-template-columns: 252px minmax(0, 1fr) 0px; }
+.app .chat { width: 408px; transition: opacity .35s ease; }
+.app.home .chat { opacity: 0; pointer-events: none; }
 .side { background: var(--bg-side); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .side-head { padding: 12px 12px 4px; display: grid; gap: 4px; }
 .side-head .btn { justify-content: flex-start; width: 100%; }
@@ -138,6 +142,7 @@ label.check input { width: auto; accent-color: var(--primary); }
 .tl-ruler span { position: absolute; top: 0; height: 100%; border-left: 1px solid var(--line); padding-left: 4px; font: 10.5px/22px var(--mono); color: var(--text-3); }
 .tl-ruler span.minor { height: 5px; top: auto; bottom: 0; }
 .lane { position: relative; height: 28px; }
+.tl-empty { padding: 12px 14px; color: var(--text-3); font-size: 13px; }
 .lane + .lane { border-top: 1px solid var(--line); }
 .item { position: absolute; top: 4px; height: 20px; border-radius: 6px; padding: 0 7px; font-size: 11.5px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; color: var(--text); }
 .item.shots { background: var(--t-shot); } .item.dialogue { background: var(--t-dialogue); } .item.callouts { background: var(--t-callout); }

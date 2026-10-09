@@ -77,7 +77,7 @@ async function renderProjects() {
 function goHome() {
   if (!discardOk()) return;
   S.dir = null; E.key = null; E.cfg = null; E.sel = null;
-  $("work").classList.add("hidden"); $("empty").classList.remove("hidden"); $("crumb").textContent = "";
+  $("work").classList.add("hidden"); $("empty").classList.remove("hidden"); $("crumb").textContent = ""; $("app").classList.add("home");
   $("input").disabled = true; $("send").disabled = true;
   $("msgs").innerHTML = '<div class="hint">Describe what you want to make. Director starts a project for it.</div>';
   renderProjects(); $("empty-input").focus();
@@ -89,7 +89,7 @@ async function openProject(dir) {
   if (S.dir && S.dir !== r.dir) { E.key = null; E.cfg = null; E.sel = null; }
   S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null;
   $("crumb").textContent = r.dir.replace(/^\/Users\/[^/]+/, "~");
-  $("empty").classList.add("hidden"); $("work").classList.remove("hidden");
+  $("empty").classList.add("hidden"); $("work").classList.remove("hidden"); $("app").classList.remove("home");
   $("input").disabled = false; $("send").disabled = !$("input").value.trim(); $("input").focus();
   showChat(dir, r.session);
   await renderProjects();
@@ -153,7 +153,7 @@ const tlDur = () => {
 function renderTimeline() {
   const f = film(), lanes = $("tl-tracks"), labels = $("tl-labels"), ruler = $("tl-ruler");
   lanes.innerHTML = labels.innerHTML = ruler.innerHTML = "";
-  if (!f) { labels.append(h("div", "", "No films yet")); return; }
+  if (!f) { lanes.append(h("div", "tl-empty", "No films yet. They show up here, shot by shot, as Director makes them.")); return; }
   const dur = tlDur(), onFilmOnly = S.shown === f.film;
   const step = dur > 40 ? 5 : 1;
   for (let t = 0; t <= dur; t += step) {
