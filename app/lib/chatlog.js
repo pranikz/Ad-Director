@@ -36,7 +36,8 @@ function append(file, ev) {
 function read(file) {
   let text = "";
   try { text = fs.readFileSync(file, "utf8"); } catch { return []; }
-  return text.split("\n").flatMap((l) => { try { return l ? [JSON.parse(l)] : []; } catch { return []; } }); // a line cut off by a crash is skipped, not the whole history
+  // a line cut off by a crash is skipped, not the whole history; ponytail: only the last 3000 events are redrawn, the file itself keeps growing (trim it if one ever gets huge)
+  return text.split("\n").slice(-3000).flatMap((l) => { try { return l ? [JSON.parse(l)] : []; } catch { return []; } });
 }
 
 module.exports = { compact, append, read };

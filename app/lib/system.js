@@ -7,23 +7,24 @@ const path = require("node:path");
 
 let loginEnv = null;
 
-/** The login shell's environment merged over ours, read once. */
-function getLoginEnv() {
-  if (loginEnv) return loginEnv;
+/** The login shell's environment merged over ours (bare process.env until loadLoginEnv has finished). */
+const getLoginEnv = () => loginEnv || process.env;
+/** Read it once, without blocking the main thread; a slow or failing rc file is retried once rather than cached. */
+function loadLoginEnv(timeout = 15000, retry = true) {
   const shell = process.env.SHELL || "/bin/zsh";
-  try {
+  return new Promise((resolve) => {
     // -il loads .zprofile/.zshrc (nvm, Homebrew); the marker skips anything the rc files print
-    const out = execFileSync(shell, ["-ilc", "printf '__DIRECTOR_ENV__'; env -0"], { encoding: "utf8", timeout: 10000 });
-    const env = {};
-    for (const kv of out.split("__DIRECTOR_ENV__")[1].split("\0")) {
-      const i = kv.indexOf("=");
-      if (i > 0) env[kv.slice(0, i)] = kv.slice(i + 1);
-    }
-    loginEnv = { ...process.env, ...env };
-  } catch {
-    loginEnv = { ...process.env };
-  }
-  return loginEnv;
+    execFile(shell, ["-ilc", "printf '__DIRECTOR_ENV__'; env -0"], { encoding: "utf8", timeout, maxBuffer: 1 << 22 }, (err, out) => {
+      const body = !err && out.split("__DIRECTOR_ENV__")[1];
+      if (!body) { if (retry) setTimeout(() => loadLoginEnv(60000, false), 2000); return resolve(getLoginEnv()); }
+      const env = {};
+      for (const kv of body.split("\0")) {
+        const i = kv.indexOf("=");
+        if (i > 0) env[kv.slice(0, i)] = kv.slice(i + 1);
+      }
+      resolve((loginEnv = { ...process.env, ...env }));
+    });
+  });
 }
 
 // Variables that point Claude Code at an API account instead of the person's own Claude login.
@@ -102,4 +103,4 @@ function claudePing(bin, env) {
   });
 }
 
-module.exports = { getLoginEnv, childEnv, resolveAuth, findClaude, claudeStatus, claudePing };
+module.exports = { getLoginEnv, loadLoginEnv, childEnv, resolveAuth, findClaude, claudeStatus, claudePing };

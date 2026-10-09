@@ -228,6 +228,8 @@ label.check input { width: auto; accent-color: var(--primary); }
 .msgs { overflow: auto; padding: 6px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 .hint { color: var(--text-3); padding: 6px 0; font-size: 13px; }
 .msg { line-height: 1.6; overflow-wrap: anywhere; }
+.msg.user.queued { opacity: .6; }
+.msg.user.queued::after { content: "Sends when Director finishes"; display: block; font-size: 11.5px; color: var(--text-3); }
 .msg.user { align-self: flex-end; max-width: 86%; background: var(--fill); padding: 8px 14px; border-radius: 18px; white-space: pre-wrap; }
 .msg.assistant p + p, .msg.assistant p + ul, .msg.assistant ul + p, .msg.assistant p + ol { margin-top: 8px; }
 .msg.assistant ul, .msg.assistant ol { padding-left: 20px; }

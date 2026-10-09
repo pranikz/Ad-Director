@@ -37,6 +37,7 @@ function testStdio(server, env, timeoutMs) {
     const timer = setTimeout(() => finish({ ok: false, error: `No answer in ${timeoutMs / 1000}s. ${stderr.trim().slice(-300)}` }), timeoutMs);
     try {
       proc = spawn(server.command, server.args || [], { env: { ...env, ...(server.env || {}) }, stdio: ["pipe", "pipe", "pipe"] });
+      proc.stdin.on("error", () => {}); // a late write after the timeout kill
     } catch (e) {
       return finish({ ok: false, error: String(e.message) });
     }
@@ -91,7 +92,7 @@ function callTool(server, env, tool, args = {}, timeoutMs = 300000) {
     let done = false, proc, stderr = "";
     const finish = (r) => { if (done) return; done = true; clearTimeout(timer); proc?.kill("SIGTERM"); resolve(r); };
     const timer = setTimeout(() => finish({ ok: false, error: `No answer in ${Math.round(timeoutMs / 1000)}s` }), timeoutMs);
-    try { proc = spawn(server.command, server.args || [], { env: { ...env, ...(server.env || {}) }, stdio: ["pipe", "pipe", "pipe"] }); }
+    try { proc = spawn(server.command, server.args || [], { env: { ...env, ...(server.env || {}) }, stdio: ["pipe", "pipe", "pipe"] }); proc.stdin.on("error", () => {}); }
     catch (e) { return finish({ ok: false, error: String(e.message) }); }
     const send = (m) => proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", ...m }) + "\n");
     proc.on("error", (e) => finish({ ok: false, error: e.message }));

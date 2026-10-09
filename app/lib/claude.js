@@ -29,13 +29,16 @@ class ClaudeSession extends EventEmitter {
   }
 
   start(resume = this.sessionId) {
-    const startedAt = Date.now();
-    const proc = spawn(this.o.bin, this.args(resume), { cwd: this.o.cwd, env: this.o.env, stdio: ["pipe", "pipe", "pipe"] });
+    // its own process group, so stop() also ends what it started (ffmpeg, renders)
+    const proc = spawn(this.o.bin, this.args(resume), { cwd: this.o.cwd, env: this.o.env, stdio: ["pipe", "pipe", "pipe"], detached: true });
     this.proc = proc;
-    let stderr = "";
+    proc.stdin.on("error", () => {}); // a write racing its exit (EPIPE) is handled by "close"
+    let stderr = "", inited = false, held = null;
     readline.createInterface({ input: proc.stdout }).on("line", (line) => {
       let ev;
       try { ev = JSON.parse(line); } catch { return; }
+      if (ev.type === "system" && ev.subtype === "init") inited = true;
+      if (resume && !inited && ev.type === "result" && ev.is_error && !ev.num_turns) { held = ev; return; } // maybe a stale --resume: decided on exit
       if (ev.type === "system" && ev.subtype === "init" && ev.session_id) this.sessionId = ev.session_id;
       if (ev.type === "result") this.busy = false;
       this.emit("event", ev);
@@ -46,13 +49,14 @@ class ClaudeSession extends EventEmitter {
       if (this.proc !== proc) return;
       this.proc = null;
       this.busy = false;
-      // a stale --resume id dies at once: start fresh and replay the pending message
-      if (resume && code !== 0 && Date.now() - startedAt < 8000 && this.pending) {
+      // the conversation is gone (Claude Code prunes old transcripts; it exits 0 saying so): start fresh, resend the message
+      if (resume && this.pending && /No conversation found/.test(stderr)) {
         this.sessionId = null;
         const msg = this.pending;
         this.start(null);
         return this.write(msg);
       }
+      if (held) this.emit("event", held);
       this.emit("event", { type: "app_exit", code, stderr: code ? stderr.trim() : "" });
     });
   }
@@ -69,9 +73,12 @@ class ClaudeSession extends EventEmitter {
   }
 
   stop() {
-    if (this.proc) this.proc.kill("SIGTERM");
+    const proc = this.proc;
     this.proc = null;
     this.busy = false;
+    if (!proc) return;
+    try { process.kill(-proc.pid, "SIGTERM"); } catch { proc.kill("SIGTERM"); }
+    this.emit("event", { type: "app_exit", code: null, stderr: "" }); // "close" ignores a stopped process, so say it here: the window stops showing "working"
   }
 }
 

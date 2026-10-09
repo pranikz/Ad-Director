@@ -118,7 +118,8 @@ async function removeProject(p, li) {
 }
 function goHome() {
   if (!discardOk()) return;
-  S.dir = null; E.key = null; E.cfg = null; E.sel = null;
+  S.dir = null; E.key = null; E.cfg = null; E.sel = null; S.timeline = { films: [] }; clearTimeout(changeTimer);
+  $("vlm").classList.add("hidden"); setBusy(false); // a run elsewhere keeps going; this view just stops showing it
   $("work").classList.add("hidden"); $("empty").classList.remove("hidden"); $("crumb").innerHTML = ""; $("app").classList.add("home");
   $("input").disabled = true; $("send").disabled = true;
   $("msgs").innerHTML = '<div class="hint">Describe what you want to make. Director starts a project for it.</div>';
@@ -127,8 +128,10 @@ function goHome() {
 async function pickProject() { const r = await D.projects.pick(); if (r?.dir) { await renderProjects(); openProject(r.dir); } }
 
 async function openProject(dir) {
+  if (!discardOk()) return; // unsaved timeline edits
   const r = await D.projects.open({ dir });
-  if (S.dir && S.dir !== r.dir) { E.key = null; E.cfg = null; E.sel = null; }
+  if (S.dir !== r.dir) { E.key = null; E.cfg = null; E.sel = null; E.needsRender = null; S.timeline = { films: [] }; }
+  clearTimeout(changeTimer); S.wantT = 0; $("vlm").classList.add("hidden");
   S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null; S.seenMedia = null;
   ["film-tabs", "variant"].forEach((id) => $(id).style.removeProperty("--w"));
   $("crumb").innerHTML = `<span>${esc(r.dir.replace(/^\/Users\/[^/]+/, "~"))}</span>`;
@@ -145,7 +148,9 @@ const video = $("video"), still = $("still");
 const TRACKS = [["Shots", "shots"], ["Dialogue", "dialogue"], ["Callouts", "callouts"], ["Cards", "cards"], ["QA", "qa"], ["End card", "endcard"]];
 
 async function loadTimeline(refresh) {
-  S.timeline = await D.projects.timeline({ dir: S.dir, refresh });
+  const dir = S.dir, tl = await D.projects.timeline({ dir, refresh });
+  if (dir !== S.dir) return; // a late reply for a project you've since left
+  S.timeline = tl;
   S.film = Math.min(S.film, Math.max(0, S.timeline.films.length - 1));
   renderTabs();
   selectSource();
@@ -155,7 +160,7 @@ function renderTabs() {
   tabs.innerHTML = "";
   S.timeline.films.forEach((f, i) => {
     const b = h("button", i === S.film && !S.rel ? "on" : "", esc(f.key.replace(/^(\d+)_/, "$1 · ").replace(/_/g, " ")));
-    b.onclick = () => { if (!discardOk()) return; S.film = i; S.rel = null; renderTabs(); selectSource(); };
+    b.onclick = () => { if (!discardOk()) return; S.film = i; S.rel = null; S.wantT = 0; $("vlm").classList.add("hidden"); renderTabs(); selectSource(); };
     tabs.append(b);
   });
   if (S.rel) {
@@ -183,8 +188,13 @@ async function selectSource() {
   show(rel);
   renderTimeline();
 }
+const EMPTY = $("screen-empty").textContent;
+video.addEventListener("error", () => {
+  if (!video.getAttribute("src")) return;
+  S.wantT = null; const e = $("screen-empty"); e.textContent = "This file can't be played yet. It may still be rendering."; e.classList.remove("hidden");
+});
 function show(rel) {
-  $("screen-empty").classList.toggle("hidden", !!rel);
+  $("screen-empty").textContent = EMPTY; $("screen-empty").classList.toggle("hidden", !!rel);
   if (!rel) { video.removeAttribute("src"); video.load(); still.classList.add("hidden"); video.classList.remove("hidden"); return; }
   const isImg = /\.(jpe?g|png|webp)$/i.test(rel);
   video.classList.toggle("hidden", isImg); still.classList.toggle("hidden", !isImg);
@@ -284,10 +294,11 @@ function renderMedia() {
         use.onclick = async (e) => {
           e.stopPropagation();
           if (locked() || !confirm(`Use ${name} as the film for ${film().key}? The current film is kept in films/takes.`)) return;
-          const r = await D.edit.useTake({ dir: S.dir, rel, key: film().key });
+          const dir = S.dir, key = film().key, r = await D.edit.useTake({ dir, rel, key });
           if (r?.ok === false) return alert(r.error);
-          E.needsRender = true; addNote(`I swapped films/${film().key}.mp4 for the take ${rel}.`);
-          S.files = await D.projects.files({ dir: S.dir }); S.variant = "film"; await loadTimeline(false); renderMedia(); updateEditBar();
+          addNote(`I swapped films/${key}.mp4 for the take ${rel}.`, dir);
+          if (dir !== S.dir) return;
+          E.needsRender = key; S.files = await D.projects.files({ dir }); S.variant = "film"; await loadTimeline(false); renderMedia(); updateEditBar();
         };
         cap.prepend(use);
       }
@@ -314,7 +325,9 @@ D.onProjectChanged(({ dir }) => {
   if (dir !== S.dir) return;
   clearTimeout(changeTimer);
   changeTimer = setTimeout(async () => {
-    S.files = await D.projects.files({ dir });
+    const files = await D.projects.files({ dir });
+    if (dir !== S.dir) return;
+    S.files = files;
     if (!E.dirty) E.key = null; // pick up Director's latest config; unsaved edits are never overwritten
     renderMedia(); await loadTimeline(false);
   }, 400);
@@ -328,8 +341,9 @@ $("vlm-run").onclick = async () => {
   const box = $("vlm"); box.classList.remove("hidden");
   box.innerHTML = `<div class="muted">Gemini is watching ${esc(rel)}… (about 30 to 90 s)</div>`;
   $("vlm-run").disabled = true;
-  const r = await D.vlm.check({ dir: S.dir, rel, key: f.key });
+  const dir = S.dir, r = await D.vlm.check({ dir, rel, key: f.key });
   $("vlm-run").disabled = false;
+  if (dir !== S.dir) return;
   if (r?.ok === false) { box.innerHTML = `<div class="err-msg">${esc(r.error)}</div>`; return; }
   box.innerHTML = `<div><span class="verdict ${r.verdict}">${r.verdict === "pass" ? "Pass" : "Fail"}</span> <span class="muted">· ${esc(r.model)} · ${(r.issues || []).length} issues · saved qa/${esc(f.key)}.vlm.json</span></div><div>${esc(r.summary)}</div>`;
   const ul = h("ul");
@@ -368,6 +382,7 @@ function setBusy(b) {
   $("send").classList.toggle("hidden", b);
   updateEditBar(); renderTimeline(); renderInspector(); renderPreview(true);
   $("chat-status").textContent = b ? "Director is working…" : "";
+  $("input").placeholder = b ? "Type a follow-up. It sends when Director finishes." : "Ask Director";
 }
 const near = () => { const m = $("msgs"); return m.scrollHeight - m.scrollTop - m.clientHeight < 120; };
 const stick = (was) => { if (was) $("msgs").scrollTop = $("msgs").scrollHeight; };
@@ -439,6 +454,11 @@ function onChatEvent({ dir, ev }, replay) {
     if (ev.error || ev.stderr) c.box.append(h("div", "err-msg", esc(ev.error || ev.stderr)));
     c.box.querySelectorAll(".tool.run").forEach((t) => (t.className = "tool err"));
   }
+  if (!replay && !c.busy && c.queued) { // the turn ended: send what you typed meanwhile
+    const q = c.queued; c.queued = "";
+    c.box.querySelectorAll(".msg.user.queued").forEach((m) => m.classList.remove("queued"));
+    dispatch(dir, q);
+  }
   if (dir === S.dir && !replay) { setBusy(c.busy); stick(was); }
 }
 D.chat.onEvent(onChatEvent);
@@ -450,15 +470,19 @@ async function send() {
   if (!text || !S.dir) return;
   const c = chatCtx(S.dir);
   c.box.querySelector(".hint")?.remove();
-  c.box.append(h("div", "msg user", esc(text)));
+  c.box.append(h("div", `msg user${c.busy ? " queued" : ""}`, esc(text)));
   $("input").value = ""; $("send").disabled = true;
-  const notes = E.notes.get(S.dir) || [];
-  E.notes.delete(S.dir);
-  const full = notes.length ? `[Edits I made in the Director app since your last turn. Keep them unless I ask otherwise:\n${notes.map((n) => `- ${n}`).join("\n")}]\n\n${text}` : text;
-  c.busy = true; c.started = Date.now(); setBusy(true);
   $("msgs").scrollTop = $("msgs").scrollHeight;
-  const r = await D.chat.send({ dir: S.dir, text: full, shown: text });
-  if (r?.ok === false) { c.busy = false; setBusy(false); c.box.append(h("div", "err-msg", esc(r.error))); }
+  if (c.busy) { c.queued = [c.queued, text].filter(Boolean).join("\n\n"); return; } // mid-turn: it goes as soon as this turn ends
+  dispatch(S.dir, text);
+}
+async function dispatch(dir, text) {
+  const c = chatCtx(dir), notes = E.notes.get(dir) || [];
+  E.notes.delete(dir);
+  const full = notes.length ? `[Edits I made in the Director app since your last turn. Keep them unless I ask otherwise:\n${notes.map((n) => `- ${n}`).join("\n")}]\n\n${text}` : text;
+  c.busy = true; c.started = Date.now(); if (dir === S.dir) setBusy(true);
+  const r = await D.chat.send({ dir, text: full, shown: text });
+  if (r?.ok === false) { c.busy = false; if (dir === S.dir) setBusy(false); c.box.append(h("div", "err-msg", esc(r.error))); }
 }
 // long steps show how long they've been going, so a slow encode never looks like a freeze
 const since = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`; };
@@ -471,7 +495,14 @@ setInterval(() => {
 $("composer").onsubmit = (e) => { e.preventDefault(); send(); };
 $("input").addEventListener("input", () => ($("send").disabled = !$("input").value.trim() || !S.dir));
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
-$("stop").onclick = async () => { await D.chat.stop({ dir: S.dir }); const c = chatCtx(S.dir); c.busy = false; setBusy(false); c.box.append(h("div", "meta", "Stopped. Your next message continues the same conversation.")); };
+$("stop").onclick = async () => {
+  const dir = S.dir, c = chatCtx(dir);
+  await D.chat.stop({ dir });
+  c.busy = false; c.box.querySelectorAll(".tool.run").forEach((t) => (t.className = "tool err"));
+  if (c.queued) { if (dir === S.dir) $("input").value = c.queued; c.queued = ""; c.box.querySelectorAll(".msg.user.queued").forEach((m) => m.remove()); } // stopped: your follow-up goes back in the box
+  c.box.append(h("div", "meta", "Stopped. Your next message continues the same conversation."));
+  if (dir === S.dir) setBusy(false);
+};
 $("chat-new").onclick = async () => { if (!S.dir) return; await D.chat.reset({ dir: S.dir }); S.chats.delete(S.dir); showChat(S.dir, false); };
 
 // ── settings ─────────────────────────────────────────────────────────
@@ -480,6 +511,7 @@ async function openSettings(focusId) {
   S.settings = await D.settings.get();
   const s = S.settings;
   for (const k of ["claudePath", "model", "projectsRoot", "pluginDir", "geminiModel"]) $(`s-${k}`).value = s[k] || "";
+  $("s-pluginDir").placeholder = s.pluginDirDefault || ""; // empty = the plugin bundled with the app
   $("s-permissionMode").value = s.permissionMode;
   $("s-geminiKey").value = ""; $("s-geminiKey").placeholder = s.hasGeminiKey ? "•••••••• saved in keychain" : "AIza…";
   $("s-mcp").value = JSON.stringify(s.mcpServers || {}, null, 2);
@@ -551,7 +583,11 @@ $("mcp-template").onchange = () => {
   $("s-mcp").value = JSON.stringify({ ...cur, ...t }, null, 2);
 };
 $("rerun-setup").onclick = () => { dlg.close(); showOnboarding(); };
-async function saveSettings(patch) { S.settings = await D.settings.set(patch); S.mcpLive = null; refreshPills(); }
+async function saveSettings(patch) {
+  const r = await D.settings.set(patch);
+  if (r?.ok === false) { alert(r.error); return false; }
+  S.settings = r; S.mcpLive = null; refreshPills(); return true;
+}
 $("open-settings").onclick = () => openSettings();
 ["pill-claude", "pill-mcp"].forEach((id) => ($(id).onclick = () => openSettings()));
 $("pill-gemini").onclick = () => openSettings("s-geminiKey");
@@ -589,20 +625,23 @@ $("general-save").onclick = async () => { await saveSettings({ projectsRoot: $("
 // ── timeline editing (unlocked whenever Director is not working on this project) ──
 const DOODLES = ["", "bulb", "bulbOff", "plug", "paan", "unlock", "dumbbell", "featherWeight", "coin", "camera", "chai", "sugar", "ball", "six", "tiffin", "moon", "pill",
   "heart", "star", "check", "cross", "arrowUp", "clock", "phone", "cart", "bag", "gift", "house", "car", "leaf", "sparkle", "note", "percent", "bolt", "rocket"];
-const locked = () => !!(S.dir && chatCtx(S.dir).busy);
+const chatBusy = () => !!(S.dir && chatCtx(S.dir).busy);
+const locked = () => E.rendering || chatBusy(); // no edits while Director works or a render runs (a render would drop them)
 const round = (t, q = 100) => Math.round(t * q) / q;
 const cuts = () => (film()?.tracks.shots || []).slice(1).map((x) => x.start);
 const crosses = (c) => cuts().some((t) => t > c.t0 + 0.05 && t < c.t1 - 0.05);
-const safeBody = (b) => esc(b).replace(/&lt;(\/?)(br|em|b)\s*\/?&gt;/g, "<$1$2>");
+const safeBody = (b) => esc(b).replace(/&amp;(#?\w+);/g, "&$1;").replace(/&lt;(\/?)(br|em|b)\s*\/?&gt;/g, "<$1$2>");
 const discardOk = () => !E.dirty || confirm("Discard your unsaved timeline edits?") && ((E.dirty = false), (E.key = null), true);
-function addNote(n) { const l = E.notes.get(S.dir) || []; if (!l.includes(n)) l.push(n); E.notes.set(S.dir, l); }
+function addNote(n, dir = S.dir) { const l = E.notes.get(dir) || []; if (!l.includes(n)) l.push(n); E.notes.set(dir, l); }
 
 async function ensureCfg() {
-  const f = film();
-  if (!f) { E.cfg = null; E.key = null; renderInspector(); updateEditBar(); return; }
+  const f = film(), dir = S.dir;
+  if (!f) { E.cfg = null; E.key = null; E.sel = null; renderInspector(); updateEditBar(); return; }
   if (E.key === f.key && E.cfg) return;
-  const cfg = await D.edit.getCfg({ dir: S.dir, key: f.key });
-  E.key = f.key; E.undo = []; E.dirty = false;
+  const cfg = await D.edit.getCfg({ dir, key: f.key });
+  if (dir !== S.dir || film()?.key !== f.key) return; // moved on while it loaded
+  if (E.selKey !== f.key) E.sel = null; // a selection belongs to one film
+  E.key = E.selKey = f.key; E.undo = []; E.dirty = false;
   E.cfg = cfg && !cfg.error ? cfg : { dur: f.filmDuration, callouts: [], cards: [] };
   E.cfg.callouts ||= []; E.cfg.cards ||= []; E.cfg.dur ||= f.filmDuration;
   if (E.sel && !E.cfg[E.sel.kind]?.[E.sel.i]) E.sel = null;
@@ -611,13 +650,13 @@ async function ensureCfg() {
 function snapshot() { E.undo.push(JSON.stringify(E.cfg)); if (E.undo.length > 100) E.undo.shift(); }
 function changed() { E.dirty = true; updateEditBar(); renderTimeline(); renderInspector(); renderPreview(true); }
 function updateEditBar() {
-  const st = $("edit-state"), lk = locked();
-  st.className = `edit-state ${E.dirty || E.needsRender ? "dirty" : "muted"}`;
-  st.textContent = E.rendering ? "Rendering… (~40 s)" : E.dirty ? "Unsaved edits" : E.needsRender ? "Take swapped, needs a render" : "";
+  const st = $("edit-state"), lk = locked(), nr = !!E.needsRender && E.needsRender === film()?.key; // a swapped take belongs to one film
+  st.className = `edit-state ${E.dirty || nr ? "dirty" : "muted"}`;
+  st.textContent = E.rendering ? "Rendering… (~40 s)" : E.dirty ? "Unsaved edits" : nr ? "Take swapped, needs a render" : "";
   $("undo").disabled = !E.undo.length || lk || E.rendering;
-  $("save-render").disabled = (!E.dirty && !E.needsRender) || lk || E.rendering;
+  $("save-render").disabled = (!E.dirty && !nr) || lk;
   $("add-callout").disabled = $("add-card").disabled = !film() || lk || E.rendering;
-  $("lockbar").classList.toggle("hidden", !lk);
+  $("lockbar").classList.toggle("hidden", !chatBusy());
   $("timeline").classList.toggle("locked", lk);
 }
 function toEditView() { // edit over the clean film so the preview isn't on top of burned-in text
@@ -678,7 +717,8 @@ function dragItem(e, kind, i, el, lane) {
   if (locked()) return;
   const live = () => document.querySelector(`.item.${kind}[data-i="${i}"]`);
   el = live() || el; lane = el.parentElement || lane;
-  const c = E.cfg[kind][i], r = lane.getBoundingClientRect(), dur = tlDur(), pps = r.width / dur, fd = film().filmDuration;
+  const c = E.cfg[kind][i], r = lane.getBoundingClientRect(), fd = film().filmDuration || tlDur();
+  let dur = tlDur(), pps = r.width / dur;
   const er = el.getBoundingClientRect(), x0 = e.clientX, len = c.t1 - c.t0, t0 = c.t0, t1 = c.t1, before = JSON.stringify(E.cfg);
   const mode = x0 - er.left < 7 ? "start" : er.right - x0 < 7 ? "end" : "move";
   const targets = [0, ...cuts(), fd, video.currentTime || 0];
@@ -687,6 +727,7 @@ function dragItem(e, kind, i, el, lane) {
   const move = (m) => {
     if (!moved && Math.abs(m.clientX - x0) < 3) return;
     moved = true;
+    dur = tlDur(); pps = r.width / dur; // the view can switch (With text → Clean) right after the press
     const dt = (m.clientX - x0) / pps;
     if (mode === "move") {
       let a = t0 + dt; const sa = snap(a, m.altKey);
@@ -710,7 +751,7 @@ function renderInspector() {
   if (!c) { box.classList.add("hidden"); box.innerHTML = ""; return; }
   box.classList.remove("hidden");
   const dis = locked() ? "disabled" : "";
-  const num = (k, label, step = 1, cls = "") => `<label class="${cls}">${label}<input type="number" step="${step}" data-k="${k}" value="${k.split(".").reduce((o, p) => o?.[p], c) ?? ""}" ${dis}></label>`;
+  const num = (k, label, step = 1, cls = "") => `<label class="${cls}">${label}<input type="number" step="${step}" data-k="${k}" value="${esc(k.split(".").reduce((o, p) => o?.[p], c) ?? "")}" ${dis}></label>`;
   const warn = [crosses(c) && `Crosses a shot cut (${cuts().filter((t) => t > c.t0 && t < c.t1).map(fmt).join(", ")}). Keep it inside one shot.`,
     (c.x < 96 || c.x > 1824 || c.y < 60 || c.y > 1020) && "Too close to the frame edge (keep 5% inside)."].filter(Boolean);
   if (E.sel.kind === "callouts") {
@@ -744,7 +785,7 @@ $("inspector").addEventListener("input", (e) => {
   E.dirty = true; updateEditBar(); renderTimeline(); renderPreview(true);
   if (k === "doodle" || e.target.type === "checkbox") { E.typing = false; renderInspector(); }
 });
-$("inspector").addEventListener("focusout", () => { E.typing = false; renderInspector(); });
+$("inspector").addEventListener("focusout", (e) => { E.typing = false; if (!$("inspector").contains(e.relatedTarget)) renderInspector(); });
 $("inspector").addEventListener("click", (e) => {
   const act = e.target.dataset.act, list = E.sel && E.cfg[E.sel.kind];
   if (!act || !list || locked()) return;
@@ -815,7 +856,7 @@ function addItem(kind) {
   const f = film();
   if (!f || !E.cfg || locked()) return;
   snapshot();
-  const t = round(Math.min(video.currentTime || 0, f.filmDuration - 1.5));
+  const t = round(Math.max(0, Math.min(video.currentTime || 0, f.filmDuration - 1.5)));
   E.cfg[kind].push(kind === "callouts"
     ? { t0: t, t1: round(Math.min(f.filmDuration, t + 2)), x: 1500, y: 300, rot: -7, lines: ["New", "callout!"] }
     : { t0: t, t1: round(Math.min(f.filmDuration, t + 2.5)), x: 1200, y: 120, title: "Notification ✓", body: "Product moment<br><em>goes here</em>" });
@@ -833,16 +874,18 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "Escape" && E.sel) { E.sel = null; renderTimeline(); renderInspector(); renderPreview(true); }
 });
 $("save-render").onclick = async () => {
-  const f = film();
+  const f = film(), dir = S.dir, edited = E.dirty;
   if (!f || !E.cfg || locked()) return;
-  E.rendering = true; updateEditBar();
-  let r = E.dirty ? await D.edit.saveCfg({ dir: S.dir, key: f.key, cfg: E.cfg }) : { ok: true };
-  if (r?.ok !== false) r = await D.edit.render({ dir: S.dir, key: f.key });
+  E.rendering = true; updateEditBar(); renderPreview(true);
+  let r = edited ? await D.edit.saveCfg({ dir, key: f.key, cfg: E.cfg }) : { ok: true };
+  if (r?.ok !== false) r = await D.edit.render({ dir, key: f.key });
   E.rendering = false;
   if (r?.ok === false) { updateEditBar(); $("edit-state").textContent = "Render failed"; alert(r.error); return; }
-  if (E.dirty) addNote(`I edited the callouts/cards of ${f.key} in the timeline (overlay/cfg/${f.key}.json) and re-rendered out/with-text/${f.key}.mp4.`);
-  E.dirty = false; E.needsRender = false; E.undo = [];
-  S.files = await D.projects.files({ dir: S.dir }); S.variant = "with-text"; S.rel = null; renderMedia();
+  if (edited) addNote(`I edited the callouts/cards of ${f.key} in the timeline (overlay/cfg/${f.key}.json) and re-rendered out/with-text/${f.key}.mp4.`, dir);
+  if (dir !== S.dir) return; // you moved to another project meanwhile; leave its state alone
+  if (E.key === f.key) { E.dirty = false; E.undo = []; }
+  if (E.needsRender === f.key) E.needsRender = null;
+  S.files = await D.projects.files({ dir }); S.variant = "with-text"; S.rel = null; renderMedia();
   await loadTimeline(false); updateEditBar();
   $("edit-state").textContent = "Saved and rendered ✓";
 };
@@ -1013,12 +1056,14 @@ $("chips").onclick = (e) => {
 $("empty-form").onsubmit = async (e) => {
   e.preventDefault();
   const text = $("empty-input").value.trim();
-  if (!text) return;
+  if (!text || S.creating) return; // a second Enter must not create a second project
+  S.creating = true; $("empty-input").value = "";
   $("empty-send").disabled = true; $("empty-status").textContent = "Starting a project…";
   const name = text.replace(/\S*\/\S*/g, " ").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean).slice(0, 5).join(" ") || "untitled";
   const r = await D.projects.create({ name });
-  if (!r?.dir) { $("empty-status").textContent = r?.error || "Could not create the project"; $("empty-send").disabled = false; return; }
-  $("empty-input").value = ""; $("empty-status").textContent = "";
+  S.creating = false;
+  if (!r?.dir) { $("empty-input").value = text; $("empty-status").textContent = r?.error || "Could not create the project"; $("empty-send").disabled = false; return; }
+  $("empty-status").textContent = "";
   await renderProjects(); await openProject(r.dir);
   $("input").value = text; send();
 };

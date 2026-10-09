@@ -6,7 +6,7 @@ const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { Readable } = require("node:stream");
 const MIME = { ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
-const { childEnv, resolveAuth, findClaude, claudeStatus, claudePing, getLoginEnv } = require("./lib/system");
+const { childEnv, resolveAuth, findClaude, claudeStatus, claudePing, getLoginEnv, loadLoginEnv } = require("./lib/system");
 const { ClaudeSession } = require("./lib/claude");
 const chatlog = require("./lib/chatlog");
 const crypto = require("node:crypto");
@@ -14,6 +14,8 @@ const mcp = require("./lib/mcp");
 const gemini = require("./lib/gemini");
 
 if (process.env.DIRECTOR_USER_DATA) app.setPath("userData", process.env.DIRECTOR_USER_DATA); // dev: clean profile for screenshots
+if (!app.requestSingleInstanceLock()) app.exit(0); // one copy per profile: two would overwrite each other's settings and chats
+const envReady = loadLoginEnv(); // PATH etc. from the login shell; IPC waits for it, the main thread never blocks on it
 protocol.registerSchemesAsPrivileged([{ scheme: "media", privileges: { secure: true, standard: true, supportFetchAPI: true, stream: true } }]);
 
 // ── settings ─────────────────────────────────────────────────────────
@@ -36,16 +38,19 @@ const DEFAULTS = {
 };
 let settings = load();
 function load() {
+  let text;
+  try { text = fs.readFileSync(SETTINGS(), "utf8"); } catch { return { ...DEFAULTS }; } // first run
   try {
-    const saved = JSON.parse(fs.readFileSync(SETTINGS(), "utf8"));
+    const saved = JSON.parse(text);
     if (saved.ignoreApiEnv && !saved.authMode) saved.authMode = "login"; // older checkbox
     delete saved.ignoreApiEnv;
     return { ...DEFAULTS, ...saved };
-  } catch { return { ...DEFAULTS }; }
+  } catch { try { fs.copyFileSync(SETTINGS(), `${SETTINGS()}.bad`); } catch {} return { ...DEFAULTS }; } // keep the damaged file for recovery
 }
-function save() {
+function save() { // write-then-rename: a crash or full disk mid-write never leaves a half file
   fs.mkdirSync(path.dirname(SETTINGS()), { recursive: true });
-  fs.writeFileSync(SETTINGS(), JSON.stringify(settings, null, 2), { mode: 0o600 });
+  fs.writeFileSync(`${SETTINGS()}.tmp`, JSON.stringify(settings, null, 2), { mode: 0o600 });
+  fs.renameSync(`${SETTINGS()}.tmp`, SETTINGS());
 }
 const secret = (field) => { try { return settings[field] ? safeStorage.decryptString(Buffer.from(settings[field], "base64")) : ""; } catch { return ""; } };
 const anthropicKey = () => secret("anthropicKey");
@@ -56,9 +61,13 @@ const geminiKey = () => {
 const pluginDir = () => settings.pluginDir ||
   (app.isPackaged ? path.join(process.resourcesPath, "director") : path.resolve(__dirname, "../plugins/director"));
 const skillDir = () => path.join(pluginDir(), "skills", "direct-film");
-const env = () => childEnv({ auth: settings.authMode, apiKey: anthropicKey(), extra: geminiKey() ? { GEMINI_API_KEY: geminiKey() } : {} });
+const env = () => {
+  const apiKey = anthropicKey();
+  if (resolveAuth(settings.authMode) === "apikey" && !apiKey) throw new Error("The API key saved in Director can't be read (the keychain refused it). Add it again in Settings → Claude Code.");
+  return childEnv({ auth: settings.authMode, apiKey, extra: geminiKey() ? { GEMINI_API_KEY: geminiKey() } : {} });
+};
 const publicSettings = () => ({ ...settings, geminiKey: undefined, anthropicKey: undefined, hasGeminiKey: !!geminiKey(), hasAnthropicKey: !!anthropicKey(),
-  authResolved: resolveAuth(settings.authMode), pluginDir: pluginDir(), sessions: undefined });
+  authResolved: resolveAuth(settings.authMode), pluginDirDefault: pluginDir(), sessions: undefined });
 
 // ── projects ─────────────────────────────────────────────────────────
 const isProject = (d) => ["brief.md", "films", "timeline.json", "overlay"].some((f) => fs.existsSync(path.join(d, f)));
@@ -79,8 +88,11 @@ function remember(dir) {
   settings.recent = [dir, ...settings.recent.filter((d) => d !== dir)].slice(0, 30);
   save();
 }
-const run = (cmd, args, opts = {}) => new Promise((resolve) =>
-  execFile(cmd, args, { env: env(), timeout: 600000, maxBuffer: 1 << 24, ...opts }, (err, stdout, stderr) => resolve({ ok: !err, stdout, stderr: String(stderr || err?.message || "") })));
+const children = new Set(); // renders and helpers, ended on quit
+const run = (cmd, args, opts = {}) => new Promise((resolve) => {
+  const p = execFile(cmd, args, { env: env(), timeout: 600000, maxBuffer: 1 << 24, detached: true, ...opts }, (err, stdout, stderr) => { children.delete(p); resolve({ ok: !err, stdout, stderr: String(stderr || err?.message || "") }); });
+  children.add(p);
+});
 
 const MEDIA = /\.(mp4|mov|webm|jpg|jpeg|png|webp)$/i;
 function listFiles(dir) {
@@ -124,7 +136,9 @@ function systemFor(dir) {
   ].join("\n");
 }
 function sessionFor(dir) {
-  if (sessions.has(dir)) return sessions.get(dir);
+  const old = sessions.get(dir);
+  if (old && (!old.stale || old.busy)) return old;
+  if (old) { sessions.delete(dir); old.stop(); } // settings changed since it started: pick them up between turns (out of the map first, so its exit isn't shown)
   const bin = findClaude(settings.claudePath);
   if (!bin) throw new Error("Claude Code not found. Install it (https://claude.com/claude-code) or set its path in Settings.");
   const s = new ClaudeSession({
@@ -133,20 +147,24 @@ function sessionFor(dir) {
     permissionMode: settings.permissionMode, model: settings.model || undefined, resume: settings.sessions[dir], system: systemFor(dir),
   });
   s.on("event", (ev) => {
-    if (ev.type === "system" && ev.subtype === "init") { settings.sessions[dir] = ev.session_id; save(); }
-    chatlog.append(chatFile(dir), ev);
-    toWindow("chat:event", { dir, ev });
+    if (sessions.get(dir) !== s) return; // a replaced process: its leftovers don't belong in the new chat
+    toWindow("chat:event", { dir, ev }); // first: a failing disk must never cut the window off
+    try {
+      if (ev.type === "system" && ev.subtype === "init") { settings.sessions[dir] = ev.session_id; save(); }
+      chatlog.append(chatFile(dir), ev);
+    } catch (e) { console.error("chat log:", e.message); }
   });
   sessions.set(dir, s);
   return s;
 }
-function resetSessions() { for (const s of sessions.values()) s.stop(); sessions.clear(); }
+// all: quitting or closing. Otherwise (settings changed) a running turn finishes first; its next message starts fresh.
+function resetSessions(all) { for (const [d, s] of sessions) { if (all || !s.busy) { s.stop(); sessions.delete(d); } else s.stale = true; } }
 
 // ── window + IPC ─────────────────────────────────────────────────────
 // IPC lives for the whole app run; handlers always talk to the current window
 function registerIpc() {
   const h = (ch, fn) => ipcMain.handle(ch, async (_e, arg) => {
-    try { return await fn(arg ?? {}); } catch (e) { return { ok: false, error: String(e.message || e) }; }
+    try { await envReady; return await fn(arg ?? {}); } catch (e) { return { ok: false, error: String(e.message || e) }; }
   });
   h("settings:get", () => publicSettings());
   h("settings:set", (patch) => {
@@ -158,8 +176,14 @@ function registerIpc() {
     if ("geminiKey" in patch) {
       settings.geminiKey = patch.geminiKey ? safeStorage.encryptString(patch.geminiKey).toString("base64") : "";
       delete patch.geminiKey;
+      resetSessions(); // the key and the system prompt's Gemini line are set when a session starts
     }
-    const restart = ["mcpServers", "claudePath", "permissionMode", "model", "authMode", "pluginDir"].some((k) => k in patch);
+    for (const k of ["projectsRoot", "pluginDir", "claudePath"]) if (typeof patch[k] === "string") {
+      patch[k] = patch[k].trim().replace(/^~(?=$|\/)/, os.homedir());
+      if (patch[k] && k !== "claudePath" && !path.isAbsolute(patch[k])) throw new Error(`Use a full folder path for ${k === "projectsRoot" ? "Projects folder" : "Plugin folder"}, like ~/Movies/Director.`);
+    }
+    // only real changes restart Claude (the dialogs send every field on Save)
+    const restart = ["mcpServers", "claudePath", "permissionMode", "model", "authMode", "pluginDir"].some((k) => k in patch && JSON.stringify(patch[k]) !== JSON.stringify(settings[k]));
     Object.assign(settings, patch);
     save();
     if (restart) resetSessions(); // next message starts Claude with the new connections (and resumes the chat)
@@ -248,7 +272,11 @@ function registerIpc() {
   });
   h("app:revealPlugin", () => shell.showItemInFolder(path.join(pluginDir(), ".claude-plugin", "plugin.json")));
 
-  h("chat:send", ({ dir, text, shown }) => { sessionFor(dir).send(text); chatlog.append(chatFile(dir), { type: "app_user", text: shown ?? text }); return { ok: true }; });
+  h("chat:send", ({ dir, text, shown }) => {
+    sessionFor(dir).send(text);
+    try { chatlog.append(chatFile(dir), { type: "app_user", text: shown ?? text }); } catch (e) { console.error("chat log:", e.message); }
+    return { ok: true };
+  });
   h("chat:stop", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); return { ok: true }; });
   h("chat:new", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; save(); fs.rmSync(chatFile(dir), { force: true }); return { ok: true }; });
 
@@ -259,7 +287,7 @@ function registerIpc() {
     if (key != null && !KEY.test(key)) throw new Error(`Bad film key: ${key}`);
   };
   const cfgPath = (dir, key) => path.join(dir, "overlay", "cfg", `${key}.json`);
-  const timeline = () => run("python3", [path.join(skillDir(), "scripts/timeline.py"), current]);
+  const timeline = (dir) => run("python3", [path.join(skillDir(), "scripts/timeline.py"), dir]); // the project the work was for, not whichever is open now
   h("cfg:get", ({ dir, key }) => {
     inProject(dir, key);
     try { return JSON.parse(fs.readFileSync(cfgPath(dir, key), "utf8")); } catch { return null; }
@@ -268,7 +296,7 @@ function registerIpc() {
     inProject(dir, key);
     fs.mkdirSync(path.dirname(cfgPath(dir, key)), { recursive: true });
     fs.writeFileSync(cfgPath(dir, key), JSON.stringify(cfg, null, 1));
-    await timeline();
+    await timeline(dir);
     return { ok: true };
   });
   h("render", async ({ dir, key }) => {
@@ -276,7 +304,7 @@ function registerIpc() {
     if (!fs.existsSync(path.join(dir, "endcard", "tail.mp4"))) throw new Error("No end card yet (endcard/tail.mp4). Ask Director to render the end card first.");
     const r = await run(path.join(skillDir(), "scripts/make_ad.sh"), [dir, key], { timeout: 900000 });
     if (!r.ok) throw new Error(r.stderr.trim().slice(-800) || "Render failed");
-    await timeline();
+    await timeline(dir);
     return { ok: true, out: r.stdout.trim() };
   });
   h("take:use", async ({ dir, rel, key }) => {
@@ -286,7 +314,7 @@ function registerIpc() {
     if (fs.existsSync(dst)) fs.copyFileSync(dst, path.join(dir, "films", "takes", `${key}__replaced_${Date.now()}.mp4`));
     fs.copyFileSync(src, dst);
     fs.rmSync(path.join(dir, "qa", `${key}.cuts`), { force: true }); // new footage, new cuts
-    await timeline();
+    await timeline(dir);
     return { ok: true };
   });
 
@@ -333,12 +361,13 @@ app.whenReady().then(() => {
     const rel = decodeURIComponent(new URL(req.url).pathname.replace(/^\//, ""));
     const abs = current && path.resolve(current, rel);
     if (!abs || !abs.startsWith(current + path.sep) || !fs.existsSync(abs)) return new Response("not found", { status: 404 });
+    if (!fs.realpathSync(abs).startsWith(fs.realpathSync(current) + path.sep)) return new Response("not found", { status: 404 }); // a symlink out of the project
     // byte ranges, or <video> can't seek (scrubbing, timeline clicks, keeping the playhead across versions)
     const size = fs.statSync(abs).size, type = MIME[path.extname(abs).toLowerCase()] || "application/octet-stream";
-    const m = /bytes=(\d*)-(\d*)/.exec(req.headers.get("range") || "");
+    const range = req.headers.get("range") || "", m = !range.includes(",") && /bytes=(\d*)-(\d*)/.exec(range); // several ranges: send it whole
     if (!m) return new Response(Readable.toWeb(fs.createReadStream(abs)), { headers: { "content-type": type, "content-length": String(size), "accept-ranges": "bytes" } });
     let start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2])), end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
-    if (start >= size) return new Response(null, { status: 416, headers: { "content-range": `bytes */${size}` } });
+    if (start >= size || end < start) return new Response(null, { status: 416, headers: { "content-range": `bytes */${size}` } });
     return new Response(Readable.toWeb(fs.createReadStream(abs, { start, end })), {
       status: 206, headers: { "content-type": type, "content-range": `bytes ${start}-${end}/${size}`, "content-length": String(end - start + 1), "accept-ranges": "bytes" },
     });
@@ -365,5 +394,6 @@ app.whenReady().then(() => {
   });
   app.on("activate", () => BrowserWindow.getAllWindows().length === 0 && createWindow());
 });
-app.on("window-all-closed", () => { resetSessions(); if (process.platform !== "darwin") app.quit(); });
-app.on("before-quit", resetSessions);
+app.on("window-all-closed", () => { resetSessions(true); if (process.platform !== "darwin") app.quit(); });
+app.on("before-quit", () => { resetSessions(true); for (const p of children) try { process.kill(-p.pid, "SIGTERM"); } catch {} });
+app.on("second-instance", () => { if (mainWin && !mainWin.isDestroyed()) { if (mainWin.isMinimized()) mainWin.restore(); mainWin.show(); mainWin.focus(); } else if (app.isReady()) createWindow(); });
