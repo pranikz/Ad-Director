@@ -2,7 +2,7 @@
 // That must not re-register IPC handlers, and the new window must still reach main. Run: npm run test:reopen
 const os = require("os"), fs = require("fs"), path = require("path");
 process.env.DIRECTOR_USER_DATA = fs.mkdtempSync(path.join(os.tmpdir(), "director-reopen-"));
-process.env.DIRECTOR_SNAPSHOT = "1"; process.env.DIRECTOR_WAIT = "99999"; // hidden windows, no capture before we exit
+process.env.DIRECTOR_SNAPSHOT = path.join(process.env.DIRECTOR_USER_DATA, "unused.png"); process.env.DIRECTOR_WAIT = "99999"; // hidden windows, no capture before we exit
 require("../main.js");
 const { app, BrowserWindow } = require("electron");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
