@@ -2,7 +2,7 @@
 # make_ad.sh <project-dir> <key> [--clean]
 #   films/<key>.mp4 + overlay/cfg/<key>.json (callouts) + endcard/tail.mp4 (+ audio/tail.m4a) → out/with-text/<key>.mp4
 #   --clean skips the text overlay → out/clean/<key>.mp4
-# Render the end card once first:  (cd endcard && npx --yes hyperframes@0.8.137 render --variables-file brand.vars.json -o tail.mp4)
+# Render the end card once first:  scripts/render_endcard.sh <project-dir>
 set -e
 p=${1:A}; k=$2; film=$p/films/$k.mp4; tail=$p/endcard/tail.mp4
 [ -f $film ] || { echo "missing $film"; exit 1; }
@@ -11,6 +11,7 @@ inputs=(-i $film); vf="[0:v]fps=24,format=yuv420p,setsar=1[v0]"
 if [ "$3" != "--clean" ]; then
   cfg=$p/overlay/cfg/$k.json
   python3 -c "import json,sys;print(json.dumps({'cfg':open(sys.argv[1]).read()}))" $cfg > $p/overlay/cfg/$k.vars.json
+  python3 ${0:A:h}/fonts.py $p/overlay/index.html $cfg >/dev/null # any Google Font named in the cfg theme
   (cd $p/overlay && npx --yes hyperframes@0.8.137 render --format mov --fps 24 --quiet --variables-file cfg/$k.vars.json -o renders/$k.mov >/dev/null 2>&1)
   inputs+=(-i $p/overlay/renders/$k.mov); vf="[0:v][1:v]overlay=0:0:format=auto,fps=24,format=yuv420p,setsar=1[v0]"; ti=2; dest=$p/out/with-text
 else ti=1; dest=$p/out/clean; fi

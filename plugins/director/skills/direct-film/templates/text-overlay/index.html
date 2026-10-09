@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080" />
     <link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Permanent+Marker&family=Kalam:wght@700&family=Bangers&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=block" rel="stylesheet" />
+    <!-- fonts:start: scripts/fonts.py links any other Google Font named in the cfg theme here -->
+    <!-- fonts:end -->
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,16 +14,16 @@
       #layer { position: absolute; inset: 0; }
       .co { position: absolute; left: 0; top: 0; width: 0; height: 0; }
       .ink { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); filter: url(#boil0) drop-shadow(0 3px 9px rgba(0,0,0,.55)); }
-      .txt { font: 400 128px/0.86 "Caveat Brush", cursive; color: var(--ink, #fff); white-space: nowrap; text-align: left; }
+      .txt { font: 400 128px/0.86 var(--lettering, "Caveat Brush"), cursive; color: var(--ink, #fff); white-space: nowrap; text-align: left; }
       .txt div:nth-child(2) { margin-left: .55em; }
       .txt div:nth-child(3) { margin-left: .25em; }
       .co svg { position: absolute; overflow: visible; }
       .co svg path { fill: none; stroke: var(--ink, #fff); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-      .card { position: absolute; display: flex; align-items: center; gap: 22px; width: 660px; padding: 26px 32px; border-radius: 26px; background: var(--card-bg, rgba(255,255,255,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.35); font-family: "Plus Jakarta Sans", sans-serif; color: var(--card-title, #111827); }
+      .card { position: absolute; display: flex; align-items: center; gap: 22px; width: 660px; padding: 26px 32px; border-radius: 26px; background: var(--card-bg, rgba(255,255,255,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.35); font-family: var(--card-font, "Plus Jakarta Sans"), sans-serif; color: var(--card-title, #111827); }
       .card .ic { width: 76px; height: 76px; flex: none; border-radius: 50%; background: var(--card-icon, #2fb35a); display: grid; place-items: center; }
       .card .ic svg path { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
-      .card b { display: block; font: 800 36px/1.15 "Plus Jakarta Sans"; }
-      .card span { display: block; margin-top: 6px; font: 600 29px/1.25 "Plus Jakarta Sans"; color: var(--card-body, #4b5563); }
+      .card b { display: block; font: 800 36px/1.15 var(--card-font, "Plus Jakarta Sans"); }
+      .card span { display: block; margin-top: 6px; font: 600 29px/1.25 var(--card-font, "Plus Jakarta Sans"); color: var(--card-body, #4b5563); }
       .card span em { font-style: normal; color: var(--card-accent, #ea580c); font-weight: 800; }
     </style>
   </head>
@@ -75,11 +77,12 @@
       const { cfg } = window.__hyperframes.getVariables();
       const C = typeof cfg === "string" ? JSON.parse(cfg) : cfg;
       const layer = document.getElementById("layer");
-      // theme: { ink, font, card: { bg, title, body, accent, icon } } — all optional
+      // theme: { ink, font, cardFont, card: { bg, title, body, accent, icon } } — all optional; fonts can be any Google Font (scripts/fonts.py)
       const TH = C.theme || {}, rs = document.documentElement.style;
       if (TH.ink) rs.setProperty("--ink", TH.ink);
       Object.entries(TH.card || {}).forEach(([k, v]) => rs.setProperty(`--card-${k}`, v));
-      if (TH.font) document.querySelectorAll("style")[0].append(`.txt { font-family: ${JSON.stringify(TH.font)}, cursive; }`);
+      if (TH.font) rs.setProperty("--lettering", JSON.stringify(TH.font));
+      if (TH.cardFont) rs.setProperty("--card-font", `${JSON.stringify(TH.cardFont)}, "Plus Jakarta Sans", sans-serif`);
       const tl = gsap.timeline({ paused: true });
       const NS = "http://www.w3.org/2000/svg";
       const svgPath = (d, box) => {

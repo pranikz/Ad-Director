@@ -200,11 +200,11 @@ label.check input { width: auto; accent-color: var(--primary); }
 .inspector .note { grid-column: 1 / -1; font-size: 13px; color: var(--bad); }
 .preview { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .pv { position: absolute; transform-origin: center; pointer-events: auto; cursor: move; white-space: nowrap; }
-.pv.txt { color: #fff; font: 400 128px/0.86 "Caveat Brush", cursive; text-shadow: 0 3px 9px rgba(0, 0, 0, .6); }
+.pv.txt { color: #fff; font: 400 128px/0.86 var(--lettering, "Caveat Brush"), cursive; text-shadow: 0 3px 9px rgba(0, 0, 0, .6); }
 .pv.txt div:nth-child(2) { margin-left: .55em; }
 .pv.card { background: rgba(255, 255, 255, .96); color: #111827; border-radius: 26px; box-shadow: 0 14px 40px rgba(0, 0, 0, .35); padding: 26px 32px; width: 660px; font-family: "Plus Jakarta Sans", sans-serif; white-space: normal; }
-.pv.card b { display: block; font: 800 36px/1.15 "Plus Jakarta Sans"; }
-.pv.card span { display: block; margin-top: 6px; font: 600 29px/1.25 "Plus Jakarta Sans"; color: #4b5563; }
+.pv.card b { display: block; font: 800 36px/1.15 var(--card-font, "Plus Jakarta Sans"); }
+.pv.card span { display: block; margin-top: 6px; font: 600 29px/1.25 var(--card-font, "Plus Jakarta Sans"); color: #4b5563; }
 .pv.card span em { font-style: normal; color: #ea580c; font-weight: 800; }
 .pv.ghost { color: transparent; text-shadow: none; outline: 1.5px dashed rgba(255, 255, 255, .85); }
 .pv.card.ghost { background: transparent; box-shadow: none; } .pv.card.ghost * { color: transparent !important; }

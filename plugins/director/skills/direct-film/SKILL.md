@@ -90,7 +90,7 @@ Follow `references/qa.md`.
 
 ## Phase 6: Text and graphics
 Follow `references/motion-graphics.md`.
-1. Pick a style: hand-lettered marker (playful), kinetic sans (modern) or a brand font.
+1. Pick a style: hand-lettered marker (playful), kinetic sans (modern) or a brand font. Fonts can be **any Google Font** (`theme.font` for callouts, `theme.cardFont` for cards); for Indian scripts pick one that covers the script (motion-graphics.md lists them). The person can also change fonts in the Director app's inspector.
 2. Per film, plan about 2 callouts on the spoken key lines and 1 UI/product card at the product beat.
 3. Each callout sits inside one shot (use the `.cuts` file), clear of faces, at least 5% inside the edges, with `glow` on busy frames.
 4. Write `overlay/cfg/<NN_slug>.json`.
@@ -98,10 +98,16 @@ Follow `references/motion-graphics.md`.
 6. Look at frames at every callout, then fix and re-run.
 
 ## Phase 7: End card
-1. Fill `endcard/brand.json` with colours, logo, offer/value (optional), benefit chips, tagline, packshot lines timed to the VO, brand lines and the disclaimer.
-2. Render it once to `endcard/tail.mp4` (command in motion-graphics.md).
-3. Put the VO or music in `audio/tail.m4a`, or leave the tail silent.
-4. If the brief has no offer, keep the offer beat minimal.
+Every ad can end differently. The end card is the brand's moment, so let the person shape it.
+1. **Ask before you build** (one short message, your recommendation filled in, so "go" works):
+   - **The look:** one of the styles in motion-graphics.md (offer-led, packshot, kinetic type, product hero, festive, app/UI), or **"match my reference"** if they attach an image of an end card or brand page they like;
+   - the **font** (any Google Font, or their brand font file), **colours**, the **logo file** and any **product or pack shots**;
+   - the **CTA line** and any **offer, claims and disclaimer** (exact, from the brief), the length (default 10 s) and the VO or music.
+   Skip what the brief or the attachments already answer. Never wait on it twice: if they say "you pick", pick and say why.
+2. **A reference image** (attached as `Attached: <path>`): match its layout, type hierarchy, palette, density and motion feel. Never copy its brand, logo, words or claims. Use their own assets (logo, packshots, font) from the attachments.
+3. **Build:** if the template covers the look, fill `endcard/brand.json` (colours, `font`, logo, offer, chips, tagline, packshot lines timed to the VO, brand lines, disclaimer). If it doesn't, write a **custom `endcard/index.html`** to the contract in motion-graphics.md (same file, same render command).
+4. Render with `scripts/render_endcard.sh <project>`, then check frames every 0.5 s (`scripts/frames_at.sh`): legibility, logo sharpness, nothing overlapping, the disclaimer readable long enough.
+5. Put the VO or music in `audio/tail.m4a`, or leave the tail silent. If the brief has no offer, leave the offer beat out.
 
 ## Phase 8: Deliver
 1. Build the `--clean` versions too.
@@ -119,6 +125,6 @@ Follow `references/motion-graphics.md`.
 - `references/qa.md`: the checklist, the failure → `EXTRA RULE` table, and the commands.
 - `references/motion-graphics.md`: the callout/card config schema and styles, the doodle list, placement, and the `brand.json` schema.
 - `references/media-backends.md`: picking models from any media MCP, AI Studio specifics, costs and pitfalls.
-- `scripts/`: `run.py`, `qa_sheet.sh`, `frames_at.sh`, `transcribe.py`, `timeline.py`, `new_project.sh`, `make_ad.sh`, `package.sh`.
-- `templates/text-overlay/`, `templates/endcard/`: variable-driven HyperFrames projects. Edit the JSON config, never the HTML.
+- `scripts/`: `run.py`, `qa_sheet.sh`, `frames_at.sh`, `transcribe.py`, `timeline.py`, `new_project.sh` (`--update` refreshes an older project's templates), `make_ad.sh`, `render_endcard.sh`, `fonts.py` (links any Google Font a config names; both build scripts run it), `package.sh`.
+- `templates/text-overlay/`, `templates/endcard/`: variable-driven HyperFrames projects. Edit the JSON config, not the HTML; the one exception is a custom end card (Phase 7).
 - `examples/lantern-bank-lite/`: one complete worked job (prompts, overlay configs, brand.json).

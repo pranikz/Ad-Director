@@ -47,7 +47,7 @@
           <p class="sub">Describe what you want made. A one-line brief is enough; a product link or a reference ad helps but is optional. Director writes the stories, casts real people, generates every shot and checks it.</p>
           <form class="box" id="empty-form">
             <textarea id="empty-input" rows="2" placeholder="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny"></textarea>
-            <div class="box-bar"><div class="row"><button type="button" class="icon" id="empty-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><select class="market" id="empty-market" title="Market: picks the agent and the local playbook it follows" aria-label="Market"></select><span class="muted" id="empty-status"></span></div><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
+            <div class="box-bar"><div class="row"><button type="button" class="icon" id="empty-attach" title="Attach references or brand assets: a video, an image of the look you want, a logo, product shots, a PDF or a font" aria-label="Attach references or assets"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><select class="market" id="empty-market" title="Market: picks the agent and the local playbook it follows" aria-label="Market"></select><span class="muted" id="empty-status"></span></div><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
           </form>
           <div class="chips" id="chips">
             <button class="chip" data-brief="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny.">Diwali spot for a delivery app</button>
@@ -101,7 +101,7 @@
         <form class="composer" id="composer">
           <div class="box">
             <textarea id="input" rows="3" placeholder="Ask Director" disabled></textarea>
-            <div class="box-bar"><div class="row"><button type="button" class="icon" id="chat-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><span class="muted" id="chat-status"></span></div>
+            <div class="box-bar"><div class="row"><button type="button" class="icon" id="chat-attach" title="Attach references or brand assets: a video, an image of the look you want, a logo, product shots, a PDF or a font" aria-label="Attach references or assets"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><span class="muted" id="chat-status"></span></div>
               <div class="row">
                 <button type="button" class="round hidden" id="stop" aria-label="Stop"><i class="ico" style="--i: url(icons/stop.svg)"></i></button>
                 <button class="round" id="send" aria-label="Send" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button>
@@ -230,5 +230,7 @@
     </dialog>
 
     <script src="app.js"></script>
+    <!-- font suggestions for the inspector; any Google Font name works -->
+    <datalist id="font-list"><option value="Caveat Brush"></option><option value="Permanent Marker"></option><option value="Kalam"></option><option value="Bangers"></option><option value="Plus Jakarta Sans"></option><option value="Baloo 2"></option><option value="Mukta"></option><option value="Hind"></option><option value="Yatra One"></option><option value="Rozha One"></option><option value="Tiro Devanagari Hindi"></option><option value="Noto Sans Devanagari"></option><option value="Amita"></option><option value="Teko"></option><option value="Poppins"></option><option value="Inter"></option><option value="Montserrat"></option><option value="DM Sans"></option><option value="Manrope"></option><option value="Space Grotesk"></option><option value="Archivo Black"></option><option value="Anton"></option><option value="Bebas Neue"></option><option value="Oswald"></option><option value="Bungee"></option><option value="Rubik Mono One"></option><option value="Shrikhand"></option><option value="Lobster"></option><option value="Pacifico"></option><option value="Gloria Hallelujah"></option><option value="Rock Salt"></option><option value="Playfair Display"></option><option value="DM Serif Display"></option><option value="Noto Sans Tamil"></option><option value="Noto Sans Bengali"></option></datalist>
   </body>
 </html>

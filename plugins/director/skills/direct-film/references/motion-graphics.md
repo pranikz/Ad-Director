@@ -10,7 +10,7 @@ You edit JSON, never HTML. HyperFrames is pinned at `hyperframes@0.8.137`. The l
 ```json
 {
   "dur": 15.08,
-  "theme": { "ink": "#ffffff", "font": "Caveat Brush",
+  "theme": { "ink": "#ffffff", "font": "Caveat Brush", "cardFont": "Plus Jakarta Sans",
              "card": { "bg": "rgba(255,255,255,.96)", "title": "#111827", "body": "#4b5563", "accent": "#ea580c", "icon": "#16a34a" } },
   "callouts": [
     { "t0": 1.0, "t1": 2.85, "x": 1380, "y": 400, "rot": -7, "size": 128, "glow": false,
@@ -27,14 +27,12 @@ You edit JSON, never HTML. HyperFrames is pinned at `hyperframes@0.8.137`. The l
 - `x` and `y` give the callout centre in 1920×1080 pixels. A doodle's `dx`/`dy` are relative to that centre. An arrow's `from` is relative to the centre and its `to` is in absolute pixels.
 - Callouts animate in this order: pop-in, line-by-line write-on, sparkle ticks, doodle draw-on, arrow, a gentle bob, then the exit. Everything gets a hand-drawn "boil" at 8 fps.
 - Cards: `from` sets the slide direction (positive slides in from the right, negative from the left). `<em>` uses the accent colour.
-- `theme` is optional; it defaults to white ink, Caveat Brush and a white card.
-- **Fonts loaded:**
-  - Caveat Brush: marker, the default.
-  - Permanent Marker: bold marker.
-  - Kalam: handwritten, also covers **Devanagari**.
-  - Bangers: comic.
-  - Plus Jakarta Sans: clean sans for kinetic or modern styles.
-  - Any other font needs a `<link>` added in `templates/text-overlay/index.html`.
+- `theme` is optional; it defaults to white ink, Caveat Brush lettering and a white Plus Jakarta Sans card.
+- **Fonts: any Google Font.** Set `theme.font` (callout lettering) and `theme.cardFont` (cards), or `"font"` in `brand.json` (the whole end card). `scripts/fonts.py` links the family before the render (`make_ad.sh` and `render_endcard.sh` run it) and stops with an error on a name Google doesn't have, so check the spelling on fonts.google.com. Offline, it keeps the fonts already linked.
+  - Built in: Caveat Brush (marker, the default), Permanent Marker (bold marker), Kalam (handwritten, covers **Devanagari**), Bangers (comic), Plus Jakarta Sans (clean sans).
+  - **Indian scripts need a font that covers them:** Devanagari: Kalam, Baloo 2, Mukta, Hind, Yatra One, Rozha One, Tiro Devanagari Hindi, Noto Sans Devanagari. Tamil: Baloo Thambi 2, Noto Sans Tamil. Bengali: Baloo Da 2, Hind Siliguri. Gujarati: Baloo Bhai 2, Shrikhand. Telugu: Baloo Tammudu 2. Kannada: Baloo Tamma 2. Malayalam: Baloo Chettan 2. Punjabi (Gurmukhi): Baloo Paaji 2. Check a frame: a font without the script falls back to a system font.
+  - **A brand font that isn't on Google** (a .ttf/.otf/.woff2 the person attached): copy it into `overlay/assets/fonts/` or `endcard/assets/fonts/`, add an `@font-face` for it between the `fonts:start`/`fonts:end` comments in that `index.html`, and name the family in the config.
+- **Projects made before fonts were configurable** run `scripts/new_project.sh <project> --update` once (it keeps configs, brand.json and assets).
 - **Doodles:**
   - Food and drink: chai, sugar, tiffin, paan.
   - Money and shopping: coin, percent, cart, bag, gift.
@@ -75,7 +73,8 @@ scripts/make_ad.sh <project> <NN_slug> --clean  # no overlay → out/clean/
   "pack": { "logo": "assets/logo.png", "logoAlt": "Brand", "art": "assets/art.png", "hills": true,
             "lines": [ { "t": 4.25, "html": "This festive season, open a" }, { "t": 5.55, "html": "Lantern Lite Current Account", "accent": true } ],
             "rule": ["LIGHT ON BALANCE", "BRIGHT ON RETURNS"], "ruleAt": 8.1 },
-  "disclaimer": "*T&amp;C apply."
+  "disclaimer": "*T&amp;C apply.",
+  "font": "Plus Jakarta Sans"
 }
 ```
 - Timing is fixed: the offer runs 0–3.9 s and the packshot 3.9–10 s. Packshot `lines[].t` should sync to the VO words. The toggle is optional (`""` hides it).
@@ -83,9 +82,27 @@ scripts/make_ad.sh <project> <NN_slug> --clean  # no overlay → out/clean/
 - `art` is optional; without it the copy centres. `hills: false` removes the hills.
 - Put the logo in `endcard/assets/`. Use the client's master file, never a crop from a compressed video if you can help it.
 
-Render the end card:
+Render the end card (fonts, variables and render in one step):
 ```bash
-cd endcard && python3 -c "import json;print(json.dumps({'brand':open('brand.json').read()}))" > brand.vars.json \
-  && npx --yes hyperframes@0.8.137 render --variables-file brand.vars.json -o tail.mp4
+scripts/render_endcard.sh <project>   # → endcard/tail.mp4
 ```
+
+### End-card styles (every ad can end differently)
+Offer the look that fits the brand and the brief, or match the person's reference image:
+| Style | What it is | How |
+|---|---|---|
+| **Offer-led** (the template) | Offer beat (value, chips, tagline) → packshot with logo and lines | `brand.json` |
+| **Packshot only** | Logo, one CTA line and the product, no offer | `brand.json` with `"pill": ""`, no chips, `"value": ""` (or a custom card) |
+| **Kinetic type** | Big words land on the VO beats, then the logo | custom `index.html` |
+| **Product hero** | The pack or phone slides, turns or settles in with the CTA | custom `index.html` with the person's packshot in `assets/` |
+| **Festive** | A frame of the festival's real motifs (diyas, rangoli, lanterns), correct for the region | custom `index.html`; follow the locale file's festival notes |
+| **App / UI** | The app screen in a phone, one tap to the result | custom `index.html` |
+
+### Custom end card contract
+When the template can't make the look (or a reference image asks for a different layout), write `endcard/index.html` yourself as a HyperFrames composition and keep this contract so the build and the app keep working:
+- The root is `<div id="root" data-composition-id="main" data-start="0" data-duration="<seconds>" data-width="1920" data-height="1080">` (1080×1920 for 9:16), and the GSAP timeline is registered as `window.__timelines["main"]`.
+- Everything brand-specific still comes from `brand.json` through the `brand` variable (read it with `window.__hyperframes.getVariables()`), and the copy, claims and disclaimer stay character for character.
+- Images and fonts come from `endcard/assets/`; Google Fonts go through `brand.json` `"font"` and the `fonts:start`/`fonts:end` comments in `<head>`.
+- Keep a 5% safe margin, the disclaimer legible on screen for at least 2 s, and the logo from the master file.
+- Render with `scripts/render_endcard.sh`, then QA frames every 0.5 s.
 The worked brand config (the fictional Lantern Bank card and placeholder logo) is in `../examples/lantern-bank-lite/endcard/`.

@@ -631,6 +631,12 @@ const locked = () => E.rendering || chatBusy(); // no edits while Director works
 const round = (t, q = 100) => Math.round(t * q) / q;
 const cuts = () => (film()?.tracks.shots || []).slice(1).map((x) => x.start);
 const crosses = (c) => cuts().some((t) => t > c.t0 + 0.05 && t < c.t1 - 0.05);
+const loaded = new Set(["Caveat Brush", "Permanent Marker", "Kalam", "Bangers", "Plus Jakarta Sans"]);
+function loadFont(f) { // preview only; the render links the same family through scripts/fonts.py
+  if (!f || loaded.has(f)) return;
+  loaded.add(f);
+  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;600;700;800&display=swap` }));
+}
 const safeBody = (b) => esc(b).replace(/&amp;(#?\w+);/g, "&$1;").replace(/&lt;(\/?)(br|em|b)\s*\/?&gt;/g, "<$1$2>");
 const discardOk = () => !E.dirty || confirm("Discard your unsaved timeline edits?") && ((E.dirty = false), (E.key = null), true);
 function addNote(n, dir = S.dir) { const l = E.notes.get(dir) || []; if (!l.includes(n)) l.push(n); E.notes.set(dir, l); }
@@ -758,6 +764,7 @@ function renderInspector() {
   if (E.sel.kind === "callouts") {
     box.innerHTML = `<div class="hd"><b>Callout ${E.sel.i + 1}</b><div class="row">${c.arrow ? `<button class="btn sm ghost" data-act="noarrow" ${dis}>Remove arrow</button>` : ""}<button class="btn sm ghost" data-act="dup" ${dis}>Duplicate</button><button class="btn sm ghost" data-act="del" ${dis}>Delete</button></div></div>
       <label class="wide">Lines, one per line<textarea data-k="lines" ${dis}>${esc((c.lines || []).join("\n"))}</textarea></label>
+      <label class="wide">Lettering font, all callouts in this film<input list="font-list" data-k="theme.font" value="${esc(E.cfg.theme?.font || "")}" placeholder="Caveat Brush. Any Google Font" ${dis}></label>
       ${num("t0", "Start (s)", 0.05)}${num("t1", "End (s)", 0.05)}${num("size", "Size", 2).replace('data-k="size" value=""', 'data-k="size" value="" placeholder="128"')}
       ${num("x", "X", 4)}${num("y", "Y", 4)}${num("rot", "Rotate °", 1)}
       <label>Doodle<select data-k="doodle" ${dis}>${DOODLES.map((d) => `<option value="${d}" ${(c.doodle?.name || "") === d ? "selected" : ""}>${d || "none"}</option>`).join("")}</select></label>
@@ -767,6 +774,7 @@ function renderInspector() {
     box.innerHTML = `<div class="hd"><b>Card ${E.sel.i + 1}</b><div class="row"><button class="btn sm ghost" data-act="dup" ${dis}>Duplicate</button><button class="btn sm ghost" data-act="del" ${dis}>Delete</button></div></div>
       <label class="wide">Title<input data-k="title" value="${esc(c.title)}" ${dis}></label>
       <label class="wide">Body (&lt;br&gt; and &lt;em&gt; allowed)<textarea data-k="body" ${dis}>${esc(c.body)}</textarea></label>
+      <label class="wide">Card font, all cards in this film<input list="font-list" data-k="theme.cardFont" value="${esc(E.cfg.theme?.cardFont || "")}" placeholder="Plus Jakarta Sans. Any Google Font" ${dis}></label>
       ${num("t0", "Start (s)", 0.05)}${num("t1", "End (s)", 0.05)}${num("x", "X", 4)}${num("y", "Y", 4)}
       <label>Slides in from<select data-k="from" ${dis}><option value="80" ${(c.from ?? 80) > 0 ? "selected" : ""}>right</option><option value="-80" ${(c.from ?? 80) < 0 ? "selected" : ""}>left</option></select></label>`;
   }
@@ -780,6 +788,7 @@ $("inspector").addEventListener("input", (e) => {
   if (k === "lines") c.lines = v.split("\n").filter((l) => l.trim());
   else if (k === "doodle") { if (v) c.doodle = { dx: 300, dy: 60, scale: 0.7, ...c.doodle, name: v }; else delete c.doodle; }
   else if (k.startsWith("doodle.")) { if (!isNaN(v)) c.doodle[k.slice(7)] = v; }
+  else if (k.startsWith("theme.")) { const t = (E.cfg.theme ||= {}), f = v.trim(); if (f) t[k.slice(6)] = f; else delete t[k.slice(6)]; } // the whole film's style
   else if (typeof v === "number" && isNaN(v)) return;
   else c[k] = k === "t0" || k === "t1" ? round(v) : v;
   if (k === "glow" && !v) delete c.glow;
@@ -809,6 +818,10 @@ function renderPreview(force) {
   if (!force && key === pvKey) return;
   pvKey = key;
   const W = box.clientWidth, H = box.clientHeight, sc = Math.min(W / 1920, H / 1080), ox = (W - 1920 * sc) / 2, oy = (H - 1080 * sc) / 2;
+  const th = E.cfg.theme || {};
+  loadFont(th.font); loadFont(th.cardFont);
+  box.style.setProperty("--lettering", th.font ? JSON.stringify(th.font) : null);
+  box.style.setProperty("--card-font", th.cardFont ? JSON.stringify(th.cardFont) : null);
   box.innerHTML = "";
   for (const [k, i, c] of act) {
     const sel = E.sel?.kind === k && E.sel.i === i;
@@ -1039,7 +1052,7 @@ async function attachTo(inputId, sendId) {
   const paths = await D.pickFiles();
   if (!paths?.length) return;
   const t = $(inputId);
-  t.value = `${t.value.trim()}${t.value.trim() ? "\n" : ""}${paths.map((p) => `Reference: ${p}`).join("\n")}`;
+  t.value = `${t.value.trim()}${t.value.trim() ? "\n" : ""}${paths.map((p) => `Attached: ${p}`).join("\n")}`;
   $(sendId).disabled = !t.value.trim() || (sendId === "send" && !S.dir);
   t.focus();
 }

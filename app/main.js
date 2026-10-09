@@ -276,8 +276,8 @@ function registerIpc() {
   }));
   h("open:external", ({ url }) => /^https?:/.test(url) && shell.openExternal(url));
   h("pick:files", async () => {
-    const r = await dialog.showOpenDialog(mainWin, { title: "Attach a reference (optional)", properties: ["openFile", "multiSelections"],
-      filters: [{ name: "Video, image or PDF", extensions: ["mp4", "mov", "webm", "m4v", "jpg", "jpeg", "png", "webp", "pdf"] }] });
+    const r = await dialog.showOpenDialog(mainWin, { title: "Attach references or brand assets (optional)", properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Video, image, logo, PDF or font", extensions: ["mp4", "mov", "webm", "m4v", "jpg", "jpeg", "png", "webp", "gif", "svg", "pdf", "ttf", "otf", "woff", "woff2"] }] });
     return r.canceled ? [] : r.filePaths;
   });
   h("app:about", () => {
