@@ -890,46 +890,53 @@ const NO_INTRO = new URLSearchParams(location.search).has("nointro") || matchMed
 function playIntro(firstRun) {
   const intro = $("intro");
   if (NO_INTRO) { intro.remove(); return Promise.resolve(); }
-  const EASE = "cubic-bezier(.2,.8,.2,1)", SNAP = "cubic-bezier(.34,1.56,.64,1)";
-  const k = firstRun ? 1 : 0.55; // the short version runs the same choreography, faster
-  const at = (s) => s * 1000 * k;
+  const SOFT = "cubic-bezier(.22,1,.36,1)", GLIDE = "cubic-bezier(.65,0,.35,1)", CLOSE = "cubic-bezier(.34,1.28,.64,1)";
   const word = $("intro-word");
   word.innerHTML = [..."Director"].map((c) => `<span>${c}</span>`).join("");
   const anims = [];
-  const a = (el, frames, delay, dur, easing = EASE) => anims.push(el.animate(frames, { delay: at(delay), duration: at(dur), easing, fill: "both" }));
-  a($("mark"), [{ opacity: 0, transform: "scale(.86)" }, { opacity: 1, transform: "scale(1)" }], 0, 0.45);
-  intro.querySelectorAll(".m-clip").forEach((el, i) => a(el, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 0.18 + i * 0.07, 0.42));
-  a(intro.querySelector(".m-head"), [{ transform: "translateX(-1900%)", opacity: 0 }, { opacity: 1, offset: 0.2 }, { transform: "translateX(0)", opacity: 1 }], 0.3, 0.55);
-  a(intro.querySelector(".m-slate"), [{ transform: "rotate(-24deg)" }, { transform: "rotate(-24deg)", offset: 0.55 }, { transform: "rotate(0deg)" }], 0.1, 0.85, SNAP);
-  a($("mark"), [{ transform: "scale(1)" }, { transform: "scale(.955)" }, { transform: "scale(1)" }], 0.93, 0.28); // the clap lands
-  if (firstRun) {
-    word.querySelectorAll("span").forEach((el, i) => a(el, [{ transform: "translateY(105%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }], 1.05 + i * 0.035, 0.5));
-    a($("intro-tag"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], 1.55, 0.5);
-  } else {
-    a(word, [{ opacity: 0 }, { opacity: 1 }], 0.8, 0.4);
-    $("intro-tag").remove();
-  }
-  const total = at(firstRun ? 2.75 : 1.55);
+  const a = (el, frames, delay, dur, easing = SOFT) => el && anims.push(el.animate(frames, { delay: delay * 1000, duration: dur * 1000, easing, fill: "both" }));
+  const q = (sel) => intro.querySelector(sel);
+  // [first run, later opens]: seconds
+  const T = firstRun
+    ? { mark: [0, 1.0], clips: [0.4, 0.85, 0.13], head: [0.6, 1.1], slate: [1.4, 0.55], press: [1.9, 0.45], ring: [1.9, 1.0], word: [2.15, 0.8, 0.055], tag: [2.95, 0.8], hold: 4.4, exit: 0.75 }
+    : { mark: [0, 0.5], clips: [0.12, 0.4, 0.06], head: [0.18, 0.5], slate: [0.45, 0.32], press: [0.74, 0.25], ring: null, word: [0.6, 0.45, 0], tag: null, hold: 1.4, exit: 0.4 };
+  a($("mark"), [{ opacity: 0, transform: "scale(.82)", filter: "blur(10px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0)" }], T.mark[0], T.mark[1]);
+  intro.querySelectorAll(".m-clip").forEach((el, i) => a(el, [{ transform: "scaleX(0)", opacity: 0 }, { opacity: 1, offset: 0.3 }, { transform: "scaleX(1)", opacity: getComputedStyle(el).opacity }], T.clips[0] + i * T.clips[2], T.clips[1]));
+  a(q(".m-head"), [{ transform: "translateX(-1900%)", opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: "translateX(0)", opacity: 1 }], T.head[0], T.head[1], GLIDE);
+  a(q(".m-slate"), [{ transform: "rotate(-26deg)" }, { transform: "rotate(0deg)" }], T.slate[0], T.slate[1], CLOSE); // held open until it closes
+  a($("mark"), [{ transform: "scale(1)" }, { transform: "scale(.965)", offset: 0.35 }, { transform: "scale(1)" }], T.press[0], T.press[1], "ease-out");
+  if (T.ring) a($("intro-ring"), [{ opacity: 0.5, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.75)" }], T.ring[0], T.ring[1], "cubic-bezier(.16,1,.3,1)");
+  else $("intro-ring").remove();
+  if (firstRun) word.querySelectorAll("span").forEach((el, i) => a(el, [{ transform: "translateY(70%)", opacity: 0, filter: "blur(6px)" }, { transform: "translateY(0)", opacity: 1, filter: "blur(0)" }], T.word[0] + i * T.word[2], T.word[1]));
+  else a(word, [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "translateY(0)" }], T.word[0], T.word[1]);
+  if (T.tag) a($("intro-tag"), [{ opacity: 0, transform: "translateY(8px)", letterSpacing: ".04em" }, { opacity: 1, transform: "translateY(0)", letterSpacing: "0" }], T.tag[0], T.tag[1]);
+  else $("intro-tag").remove();
   return new Promise((resolve) => {
     let done = false;
     const finish = (fast) => {
       if (done) return;
       done = true;
       removeEventListener("keydown", skip); intro.removeEventListener("pointerdown", skip);
-      const out = intro.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.015)" }], { duration: fast ? 160 : 420, easing: EASE, fill: "forwards" });
-      enterApp(firstRun);
+      const d = fast ? 180 : T.exit * 1000;
+      q(".intro-inner").animate([{ opacity: 1, transform: "translateY(-4vh)", filter: "blur(0)" }, { opacity: 0, transform: "translateY(calc(-4vh - 14px))", filter: "blur(4px)" }], { duration: d, easing: SOFT, fill: "forwards" });
+      const out = intro.animate([{ backgroundColor: getComputedStyle(intro).backgroundColor }, { backgroundColor: "transparent" }], { duration: d, delay: fast ? 0 : d * 0.25, easing: SOFT, fill: "forwards" });
+      enterApp(firstRun, fast);
       out.onfinish = () => { anims.forEach((x) => x.cancel()); intro.remove(); resolve(); };
     };
     const skip = () => finish(true);
     addEventListener("keydown", skip); intro.addEventListener("pointerdown", skip);
-    setTimeout(() => finish(false), total);
+    setTimeout(() => finish(false), T.hold * 1000);
   });
 }
 // the destination eases in under the fading intro
-function enterApp(firstRun) {
-  const EASE = "cubic-bezier(.2,.8,.2,1)";
-  const rise = (el, delay) => el?.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 520, delay, easing: EASE, fill: "backwards" });
-  if (firstRun && !OB.classList.contains("hidden")) { rise(OB.querySelector(".ob-step:not(.hidden)"), 120); return; }
+function enterApp(firstRun, fast) {
+  const EASE = "cubic-bezier(.22,1,.36,1)";
+  const rise = (el, delay, dur = 520) => el?.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: dur, delay, easing: EASE, fill: "backwards" });
+  if (firstRun && !OB.classList.contains("hidden")) {
+    const step = OB.querySelector(".ob-step:not(.hidden)");
+    [...(step?.children || [])].forEach((el, i) => rise(el, (fast ? 60 : 260) + i * 70, 800)); // onboarding settles in line by line
+    return;
+  }
   rise(document.querySelector(".top"), 60); rise(document.querySelector(".side"), 110); rise($("stage"), 160); rise(document.querySelector(".chat"), 210);
 }
 
