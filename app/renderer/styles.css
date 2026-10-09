@@ -311,6 +311,8 @@ dialog.instant, dialog.instant::backdrop { transition: none; }
 .about-list dt { color: var(--text-3); }
 .about-list dd { color: var(--text); font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
 .about-foot { font-size: 12px; line-height: 1.6; }
+.about-foot a { color: var(--text-2); text-underline-offset: 3px; }
+.about-foot a:hover { color: var(--text); }
 a.btn { text-decoration: none; }
 
 /* Claude account chooser */
