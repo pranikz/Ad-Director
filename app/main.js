@@ -94,8 +94,8 @@ function remember(dir) {
   save();
 }
 const children = new Set(); // renders and helpers, ended on quit
-const run = (cmd, args, opts = {}) => new Promise((resolve) => {
-  const p = execFile(cmd, args, { env: env(), timeout: 600000, maxBuffer: 1 << 24, detached: true, ...opts }, (err, stdout, stderr) => { children.delete(p); resolve({ ok: !err, stdout, stderr: String(stderr || err?.message || "") }); });
+const run = (cmd, args, { env: e, ...opts } = {}) => new Promise((resolve) => {
+  const p = execFile(cmd, args, { env: e || env(), timeout: 600000, maxBuffer: 1 << 24, detached: true, ...opts }, (err, stdout, stderr) => { children.delete(p); resolve({ ok: !err, stdout, stderr: String(stderr || err?.message || "") }); });
   children.add(p);
 });
 
@@ -219,6 +219,30 @@ function registerIpc() {
   h("mcp:import", () => mcp.importFromClaudeCode());
   h("gemini:test", () => (geminiKey() ? gemini.test(geminiKey(), settings.geminiModel) : { ok: false, error: "No key set" }));
 
+  // the command-line tools the skill's scripts need, and a one-click Homebrew install for the missing ones
+  const TOOLS = [
+    { id: "ffmpeg", label: "ffmpeg", why: "encodes every cut", cmd: "ffmpeg", args: ["-version"], brew: "ffmpeg" },
+    { id: "node", label: "Node.js", why: "renders the text and end cards (HyperFrames)", cmd: "node", args: ["--version"], brew: "node" },
+    { id: "python", label: "Python 3", why: "runs the timeline and QA scripts", cmd: "python3", args: ["--version"], brew: "python" },
+    { id: "uv", label: "uv", why: "runs the AI Studio MCP and the batch runner", cmd: "uvx", args: ["--version"], brew: "uv" },
+  ];
+  const brewBin = () => ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"].find((p) => fs.existsSync(p)) || null;
+  h("tools:check", async () => ({
+    brew: brewBin(),
+    tools: await Promise.all(TOOLS.map(async ({ id, label, why, cmd, args }) => {
+      const r = await run(cmd, args, { env: getLoginEnv(), timeout: 20000 });
+      return { id, label, why, ok: r.ok, version: r.ok ? `${r.stdout || r.stderr}`.split("\n")[0].replace(/\s*Copyright.*$/, "").trim().slice(0, 90) : "" };
+    })),
+  }));
+  h("tools:install", async ({ ids }) => {
+    const brew = brewBin();
+    if (!brew) throw new Error("Homebrew isn't installed. Get it from brew.sh, then try again.");
+    const pkgs = TOOLS.filter((t) => ids?.includes(t.id)).map((t) => t.brew);
+    if (!pkgs.length) return { ok: true };
+    const r = await run(brew, ["install", ...pkgs], { env: { ...getLoginEnv(), HOMEBREW_NO_INSTALL_CLEANUP: "1" }, timeout: 1800000 });
+    if (!r.ok) throw new Error(r.stderr.trim().slice(-700) || "brew install failed");
+    return { ok: true };
+  });
   h("projects:list", () => listProjects());
   h("projects:create", async ({ name, market }) => {
     const slug = String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";

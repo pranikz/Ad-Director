@@ -562,8 +562,36 @@ async function renderAbout() {
 }
 $("about-copy").onclick = async () => { await D.copy(S.diagnostics || ""); $("about-status").className = "status inline ok"; $("about-status").textContent = "Copied"; setTimeout(() => ($("about-status").textContent = ""), 1500); };
 $("about-plugin").onclick = () => D.revealPlugin();
+// ffmpeg, Node, Python and uv: what the scripts need, with a one-click Homebrew install
+async function renderTools(boxId) {
+  const box = $(boxId);
+  box.innerHTML = '<div class="tools-label">Video tools</div><div class="check-row"><i class="ico" style="--i: url(icons/circle-notch.svg)"></i><span>Checking ffmpeg, Node.js, Python and uv…</span></div>';
+  const r = await D.tools.check();
+  if (r?.ok === false) { box.lastChild.textContent = r.error; return; }
+  const missing = r.tools.filter((t) => !t.ok);
+  box.innerHTML = '<div class="tools-label">Video tools</div>' + r.tools.map((t) => `<div class="check-row ${t.ok ? "ok" : "bad"}"><i class="ico" style="--i: url(icons/${t.ok ? "check" : "x-circle"}.svg)"></i><span><b>${esc(t.label)}</b> <span class="muted">${esc(t.ok ? t.version : `missing: ${t.why}`)}</span></span></div>`).join("");
+  if (!missing.length) return;
+  const cmd = `brew install ${missing.map((t) => ({ ffmpeg: "ffmpeg", node: "node", python: "python", uv: "uv" })[t.id]).join(" ")}`;
+  if (r.brew) {
+    const b = h("button", "btn sm", `Install ${esc(missing.map((t) => t.label).join(", "))} with Homebrew`), st = h("span", "status inline", "");
+    b.type = "button";
+    b.onclick = async () => {
+      b.disabled = true; st.className = "status inline"; st.textContent = "Installing… this can take a few minutes";
+      const x = await D.tools.install({ ids: missing.map((t) => t.id) });
+      if (x?.ok === false) { b.disabled = false; st.className = "status inline bad"; st.textContent = x.error; return; }
+      renderTools(boxId);
+    };
+    const row = h("div", "row"); row.append(b, st); box.append(row);
+  } else {
+    box.insertAdjacentHTML("beforeend", `<p>Install <a data-ext href="https://brew.sh">Homebrew</a> first (it asks for your Mac password), then run this in Terminal:</p>`);
+    const c = h("div", "cmd", `<code>${esc(cmd)}</code>`), copy = h("button", "btn sm ghost", "Copy");
+    copy.type = "button"; copy.onclick = async () => { await D.copy(cmd); copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1200); };
+    c.append(copy); box.append(c);
+  }
+}
 function showSec(id) {
   if (id === "sec-about") renderAbout();
+  if (id === "sec-general") renderTools("s-tools");
   document.querySelectorAll("#dlg-nav button").forEach((b) => b.classList.toggle("on", b.dataset.sec === id));
   glide($("dlg-nav"));
   document.querySelectorAll(".dlg-body section").forEach((x) => x.classList.toggle("hidden", x.id !== id));
@@ -944,7 +972,7 @@ for (const id of ["acct", "ob-acct"]) {
 const OB = $("onboard");
 function obStep(n) {
   OB.querySelectorAll(".ob-step").forEach((x) => x.classList.toggle("hidden", x.dataset.step !== String(n)));
-  if (n === 1) obClaude();
+  if (n === 1) { obClaude(); renderTools("ob-tools"); }
   if (n === 2) obMedia();
 }
 function showOnboarding() { OB.classList.remove("hidden"); obStep(1); }

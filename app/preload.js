@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("director", {
     files: call("projects:files"), timeline: call("projects:timeline"), reveal: call("projects:reveal"), remove: call("projects:remove"), openFolder: call("projects:openFolder"), setMarket: call("projects:setMarket"),
   },
   menu: call("menu"),
+  tools: { check: call("tools:check"), install: call("tools:install") },
   chat: { send: call("chat:send"), stop: call("chat:stop"), reset: call("chat:new"), onEvent: on("chat:event") },
   vlm: { check: call("vlm:check") },
   edit: { getCfg: call("cfg:get"), saveCfg: call("cfg:save"), render: call("render"), useTake: call("take:use") },

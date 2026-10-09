@@ -332,6 +332,13 @@ a.btn { text-decoration: none; }
 .acct-opt small { display: block; color: var(--text-3); font-size: 12.5px; margin-top: 1px; }
 .acct-key input { flex: 1; min-width: 220px; border-radius: 999px; }
 
+/* video tools check */
+.tools { display: grid; gap: 8px; }
+.tools:empty { display: none; }
+.tools-label { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.tools .check-row b { font-weight: 500; }
+.tools p a, .ob p a { color: var(--text); text-underline-offset: 3px; }
+
 /* onboarding */
 .ob { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: grid; grid-template-rows: 48px 1fr; }
 .ob-top { -webkit-app-region: drag; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; }
