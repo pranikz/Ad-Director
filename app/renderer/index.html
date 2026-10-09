@@ -47,7 +47,7 @@
           <p class="sub">Describe what you want made. A one-line brief is enough; a product link or a reference ad helps but is optional. Director writes the stories, casts real people, generates every shot and checks it.</p>
           <form class="box" id="empty-form">
             <textarea id="empty-input" rows="2" placeholder="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny"></textarea>
-            <div class="box-bar"><div class="row"><button type="button" class="icon" id="empty-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><span class="muted" id="empty-status"></span></div><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
+            <div class="box-bar"><div class="row"><button type="button" class="icon" id="empty-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><select class="market" id="empty-market" title="Market: picks the agent and the local playbook it follows" aria-label="Market"></select><span class="muted" id="empty-status"></span></div><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
           </form>
           <div class="chips" id="chips">
             <button class="chip" data-brief="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny.">Diwali spot for a delivery app</button>
@@ -96,7 +96,7 @@
 
       <aside class="chat">
         <div class="chat-resize" id="chat-resize" title="Drag to resize. Double-click to reset."></div>
-        <div class="chat-head"><h2>Director</h2><div class="row"><button class="btn sm plain" id="chat-new" title="Start a fresh conversation for this project">New chat</button><button class="icon" id="chat-expand" title="Expand the chat" aria-label="Expand the chat"><i class="ico" style="--i: url(icons/arrows-out-simple.svg)"></i></button></div></div>
+        <div class="chat-head"><h2>Director</h2><div class="row"><select class="market" id="chat-market" title="This project's market. A change applies from your next message." aria-label="Market"></select><button class="btn sm plain" id="chat-new" title="Start a fresh conversation for this project">New chat</button><button class="icon" id="chat-expand" title="Expand the chat" aria-label="Expand the chat"><i class="ico" style="--i: url(icons/arrows-out-simple.svg)"></i></button></div></div>
         <div class="msgs" id="msgs"><div class="hint">Open a project to start. Director runs on your own Claude Code, with your plugins, skills and MCPs.</div></div>
         <form class="composer" id="composer">
           <div class="box">

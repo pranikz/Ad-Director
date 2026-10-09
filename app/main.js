@@ -20,6 +20,9 @@ protocol.registerSchemesAsPrivileged([{ scheme: "media", privileges: { secure: t
 
 // ── settings ─────────────────────────────────────────────────────────
 const SETTINGS = () => path.join(app.getPath("userData"), "settings.json");
+// The market picks the agent and the locale notes it follows: India runs `director`, the rest `director-international`.
+const MARKETS = { india: "India", "us-uk": "US & UK", eu: "Europe", mea: "Middle East & Africa", sea: "Southeast Asia", global: "Global (several markets)" };
+const marketOf = (dir) => (MARKETS[settings.markets?.[dir]] ? settings.markets[dir] : "india");
 const DEFAULTS = {
   projectsRoot: path.join(os.homedir(), "Downloads"),
   claudePath: "",
@@ -35,6 +38,8 @@ const DEFAULTS = {
   geminiKey: "", // encrypted with the OS keychain (safeStorage), base64
   sessions: {},
   recent: [],
+  market: "india", // the market picked for the last new project
+  markets: {}, // project dir → market
 };
 let settings = load();
 function load() {
@@ -44,7 +49,7 @@ function load() {
     const saved = JSON.parse(text);
     if (saved.ignoreApiEnv && !saved.authMode) saved.authMode = "login"; // older checkbox
     delete saved.ignoreApiEnv;
-    return { ...DEFAULTS, ...saved };
+    return { ...DEFAULTS, ...saved, markets: saved.markets || {} };
   } catch { try { fs.copyFileSync(SETTINGS(), `${SETTINGS()}.bad`); } catch {} return { ...DEFAULTS }; } // keep the damaged file for recovery
 }
 function save() { // write-then-rename: a crash or full disk mid-write never leaves a half file
@@ -67,7 +72,7 @@ const env = () => {
   return childEnv({ auth: settings.authMode, apiKey, extra: geminiKey() ? { GEMINI_API_KEY: geminiKey() } : {} });
 };
 const publicSettings = () => ({ ...settings, geminiKey: undefined, anthropicKey: undefined, hasGeminiKey: !!geminiKey(), hasAnthropicKey: !!anthropicKey(),
-  authResolved: resolveAuth(settings.authMode), pluginDirDefault: pluginDir(), sessions: undefined });
+  authResolved: resolveAuth(settings.authMode), pluginDirDefault: pluginDir(), sessions: undefined, marketList: MARKETS });
 
 // ── projects ─────────────────────────────────────────────────────────
 const isProject = (d) => ["brief.md", "films", "timeline.json", "overlay"].some((f) => fs.existsSync(path.join(d, f)));
@@ -127,6 +132,11 @@ const chatFile = (dir) => path.join(app.getPath("userData"), "chats", `${crypto.
 function systemFor(dir) {
   return [
     `You are running inside the Director desktop app. The open project folder is: ${dir}`,
+    marketOf(dir) === "india"
+      ? "The person picked India as this project's market: follow references/locales/india.md."
+      : marketOf(dir) === "global"
+        ? "The person picked several markets for this project: follow references/locales/international.md and the region file for every market the brief names; ask which markets if the brief doesn't say."
+        : `The person picked ${MARKETS[marketOf(dir)]} as this project's market: follow references/locales/international.md and references/locales/${marketOf(dir)}.md.`,
     `The direct-film skill lives at: ${skillDir()} (scripts in scripts/, templates in templates/).`,
     `If the project folder has no structure yet, scaffold it with: ${path.join(skillDir(), "scripts/new_project.sh")} "${dir}"`,
     `After you add or change films, outputs, overlay configs or QA files, run: python3 ${path.join(skillDir(), "scripts/timeline.py")} "${dir}" — the app's timeline viewer reads timeline.json.`,
@@ -142,7 +152,7 @@ function sessionFor(dir) {
   const bin = findClaude(settings.claudePath);
   if (!bin) throw new Error("Claude Code not found. Install it (https://claude.com/claude-code) or set its path in Settings.");
   const s = new ClaudeSession({
-    bin, env: env(), cwd: dir, pluginDir: pluginDir(), agent: "director:director",
+    bin, env: env(), cwd: dir, pluginDir: pluginDir(), agent: marketOf(dir) === "india" ? "director:director" : "director:director-international",
     mcpConfig: mcp.writeMcpConfig(settings.mcpServers, path.join(app.getPath("userData"), "mcp.json")),
     permissionMode: settings.permissionMode, model: settings.model || undefined, resume: settings.sessions[dir], system: systemFor(dir),
   });
@@ -210,15 +220,23 @@ function registerIpc() {
   h("gemini:test", () => (geminiKey() ? gemini.test(geminiKey(), settings.geminiModel) : { ok: false, error: "No key set" }));
 
   h("projects:list", () => listProjects());
-  h("projects:create", async ({ name }) => {
+  h("projects:create", async ({ name, market }) => {
     const slug = String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
     let dir = path.join(settings.projectsRoot, slug);
     for (let n = 2; fs.existsSync(dir); n++) dir = path.join(settings.projectsRoot, `${slug}-${n}`); // never merge into an existing folder
     const r = await run(path.join(skillDir(), "scripts/new_project.sh"), [dir]);
     if (!r.ok) throw new Error(r.stderr);
     if (!fs.existsSync(path.join(dir, "brief.md"))) fs.writeFileSync(path.join(dir, "brief.md"), `# ${name}\n\n(brief: brand, product, claims, language, tone, count, length, aspect, do-nots)\n`);
+    if (MARKETS[market]) { settings.markets[dir] = market; settings.market = market; }
     remember(dir);
     return { dir };
+  });
+  // a different market means a different agent: the chat switches between turns, keeping the conversation
+  h("projects:setMarket", ({ dir, market }) => {
+    if (!MARKETS[market]) throw new Error("Unknown market");
+    settings.markets[path.resolve(dir)] = market; settings.market = market; save();
+    const s = sessions.get(path.resolve(dir)); if (s) s.stale = true;
+    return { ok: true, market };
   });
   h("projects:pick", async () => {
     const r = await dialog.showOpenDialog(mainWin, { properties: ["openDirectory", "createDirectory"] });
@@ -230,12 +248,12 @@ function registerIpc() {
     current = path.resolve(dir);
     remember(current);
     watch(current);
-    return { dir: current, files: listFiles(current), session: !!settings.sessions[current], history: chatlog.read(chatFile(current)) };
+    return { dir: current, files: listFiles(current), session: !!settings.sessions[current], history: chatlog.read(chatFile(current)), market: marketOf(current) };
   });
   h("projects:remove", async ({ dir }) => {
     dir = path.resolve(dir);
     if (!listProjects().some((p) => p.dir === dir)) throw new Error("Not a project in the list");
-    sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; fs.rmSync(chatFile(dir), { force: true });
+    sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; delete settings.markets[dir]; fs.rmSync(chatFile(dir), { force: true });
     if (current === dir) { watcher?.close(); current = null; }
     settings.recent = settings.recent.filter((d) => d !== dir); save();
     if (owned(dir)) await shell.trashItem(dir);

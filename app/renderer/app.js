@@ -135,6 +135,7 @@ async function openProject(dir) {
   S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null; S.seenMedia = null;
   ["film-tabs", "variant"].forEach((id) => $(id).style.removeProperty("--w"));
   $("crumb").innerHTML = `<span>${esc(r.dir.replace(/^\/Users\/[^/]+/, "~"))}</span>`;
+  $("chat-market").value = r.market || "india";
   $("empty").classList.add("hidden"); $("work").classList.remove("hidden"); $("app").classList.remove("home");
   $("input").disabled = false; $("send").disabled = !$("input").value.trim(); $("input").focus();
   showChat(r.dir, r.session, r.history);
@@ -1060,7 +1061,7 @@ $("empty-form").onsubmit = async (e) => {
   S.creating = true; $("empty-input").value = "";
   $("empty-send").disabled = true; $("empty-status").textContent = "Starting a project…";
   const name = text.replace(/\S*\/\S*/g, " ").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean).slice(0, 5).join(" ") || "untitled";
-  const r = await D.projects.create({ name });
+  const r = await D.projects.create({ name, market: $("empty-market").value });
   S.creating = false;
   if (!r?.dir) { $("empty-input").value = text; $("empty-status").textContent = r?.error || "Could not create the project"; $("empty-send").disabled = false; return; }
   $("empty-status").textContent = "";
@@ -1128,6 +1129,19 @@ function enterApp(firstRun, fast) {
 // ── boot ─────────────────────────────────────────────────────────────
 $("new-project").onclick = $("home").onclick = goHome;
 $("crumb").onclick = () => S.dir && D.projects.openFolder({ dir: S.dir });
+function fillMarkets() {
+  const list = S.settings?.marketList || { india: "India" };
+  for (const id of ["empty-market", "chat-market"]) $(id).innerHTML = Object.entries(list).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("");
+  $("empty-market").value = S.settings?.market || "india";
+}
+$("chat-market").onchange = async () => {
+  if (!S.dir) return;
+  const r = await D.projects.setMarket({ dir: S.dir, market: $("chat-market").value });
+  if (r?.ok === false) return alert(r.error);
+  S.settings.market = r.market; $("empty-market").value = r.market;
+  chatCtx(S.dir).box.append(h("div", "meta", `Market set to ${esc($("chat-market").selectedOptions[0].textContent)}. Director follows it from your next message.`));
+  stick(true);
+};
 
 // ── chat panel width: drag its left edge, or expand/collapse ──
 const CHAT_W = 408, chatMax = () => Math.max(320, Math.min(900, innerWidth - 732)); // the stage keeps at least 480px
@@ -1152,7 +1166,7 @@ $("pick-project").onclick = $("empty-open").onclick = pickProject;
 tick();
 (async () => {
   S.settings = await D.settings.get();
-  refreshPills();
+  refreshPills(); fillMarkets();
   await renderProjects();
   const firstRun = !S.settings.onboarded;
   if (firstRun) showOnboarding();
