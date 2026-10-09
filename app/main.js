@@ -8,6 +8,8 @@ const { Readable } = require("node:stream");
 const MIME = { ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
 const { childEnv, resolveAuth, findClaude, claudeStatus, claudePing, getLoginEnv } = require("./lib/system");
 const { ClaudeSession } = require("./lib/claude");
+const chatlog = require("./lib/chatlog");
+const crypto = require("node:crypto");
 const mcp = require("./lib/mcp");
 const gemini = require("./lib/gemini");
 
@@ -108,6 +110,7 @@ function watch(dir) {
 
 // ── chat (one Claude Code process per project) ───────────────────────
 const sessions = new Map();
+const chatFile = (dir) => path.join(app.getPath("userData"), "chats", `${crypto.createHash("sha1").update(dir).digest("hex")}.jsonl`);
 function systemFor(dir) {
   return [
     `You are running inside the Director desktop app. The open project folder is: ${dir}`,
@@ -130,6 +133,7 @@ function sessionFor(dir) {
   });
   s.on("event", (ev) => {
     if (ev.type === "system" && ev.subtype === "init") { settings.sessions[dir] = ev.session_id; save(); }
+    chatlog.append(chatFile(dir), ev);
     toWindow("chat:event", { dir, ev });
   });
   sessions.set(dir, s);
@@ -201,12 +205,12 @@ function registerIpc() {
     current = path.resolve(dir);
     remember(current);
     watch(current);
-    return { dir: current, files: listFiles(current), session: !!settings.sessions[current] };
+    return { dir: current, files: listFiles(current), session: !!settings.sessions[current], history: chatlog.read(chatFile(current)) };
   });
   h("projects:remove", async ({ dir }) => {
     dir = path.resolve(dir);
     if (!listProjects().some((p) => p.dir === dir)) throw new Error("Not a project in the list");
-    sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir];
+    sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; fs.rmSync(chatFile(dir), { force: true });
     if (current === dir) { watcher?.close(); current = null; }
     settings.recent = settings.recent.filter((d) => d !== dir); save();
     if (owned(dir)) await shell.trashItem(dir);
@@ -237,9 +241,9 @@ function registerIpc() {
   });
   h("app:revealPlugin", () => shell.showItemInFolder(path.join(pluginDir(), ".claude-plugin", "plugin.json")));
 
-  h("chat:send", ({ dir, text }) => { sessionFor(dir).send(text); return { ok: true }; });
+  h("chat:send", ({ dir, text, shown }) => { sessionFor(dir).send(text); chatlog.append(chatFile(dir), { type: "app_user", text: shown ?? text }); return { ok: true }; });
   h("chat:stop", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); return { ok: true }; });
-  h("chat:new", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; save(); return { ok: true }; });
+  h("chat:new", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; save(); fs.rmSync(chatFile(dir), { force: true }); return { ok: true }; });
 
   // ── manual edits (only inside the open project, only for plain film keys) ──
   const KEY = /^[\w.-]+$/;

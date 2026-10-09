@@ -126,7 +126,7 @@ async function openProject(dir) {
   $("crumb").textContent = r.dir.replace(/^\/Users\/[^/]+/, "~");
   $("empty").classList.add("hidden"); $("work").classList.remove("hidden"); $("app").classList.remove("home");
   $("input").disabled = false; $("send").disabled = !$("input").value.trim(); $("input").focus();
-  showChat(dir, r.session);
+  showChat(r.dir, r.session, r.history);
   await renderProjects();
   await loadTimeline(false);
   renderMedia();
@@ -219,6 +219,7 @@ function renderTimeline() {
       if (editable) {
         el.classList.add("editable"); el.dataset.i = it.i;
         if (E.sel?.kind === key && E.sel.i === it.i) el.classList.add("sel");
+        el.title += "\nDouble-click to edit the text on the video.";
         if (crosses(it.c)) { el.classList.add("warn"); el.title += "  ⚠ crosses a shot cut"; }
         el.onpointerdown = (e) => dragItem(e, key, it.i, el, lane);
       } else el.onpointerdown = (e) => { e.stopPropagation(); seek(it.start + 0.02); };
@@ -337,9 +338,14 @@ function chatCtx(dir) {
   }
   return S.chats.get(dir);
 }
-function showChat(dir, resumed) {
+function showChat(dir, resumed, history = []) {
   const msgs = $("msgs"), c = chatCtx(dir);
   msgs.innerHTML = "";
+  if (!c.box.childElementCount && history.length) { // first open this run: redraw the saved conversation (before it's attached, so nothing animates)
+    for (const ev of history) onChatEvent({ dir, ev }, true);
+    const cut = c.box.querySelectorAll(".tool.run");
+    if (cut.length) { cut.forEach((t) => (t.className = "tool err")); c.box.append(h("div", "meta", "The app closed before Director finished this turn. Ask it to carry on.")); }
+  }
   if (!c.box.childElementCount) c.box.append(h("div", "hint", resumed ? "Continuing this project's last conversation. Ask for anything." : "Tell Director what to make. A brief, a product page, a reference video path or a vague idea all work."));
   msgs.append(c.box);
   setBusy(c.busy);
@@ -364,13 +370,12 @@ function toolLabel(name, input = {}) {
   if (name.startsWith("mcp__")) { const [, srv, ...t] = name.split("__"); return [srv, t.join("__")]; }
   return [name, input.pattern || input.query || input.url || ""];
 }
-function onChatEvent({ dir, ev }) {
+function onChatEvent({ dir, ev }, replay) {
   const c = chatCtx(dir), was = near();
   if (ev.type === "system" && ev.subtype === "init") {
-    S.mcpLive = ev.mcp_servers || [];
-    refreshPills();
-    const off = S.mcpLive.filter((m) => m.status !== "connected");
-    c.box.append(h("div", "meta", `${esc(ev.model || "Claude Code")} via ${esc(S.status?.using || "Claude Code")}, ${S.mcpLive.length - off.length} of ${S.mcpLive.length} MCP servers connected${off.length ? `. Not connected: ${esc(off.map((m) => m.name).join(", "))}` : ""}`));
+    const mcps = ev.mcp_servers || [], off = mcps.filter((m) => m.status !== "connected");
+    if (!replay) { S.mcpLive = mcps; refreshPills(); }
+    c.box.append(h("div", "meta", `${esc(ev.model || "Claude Code")} via ${esc(S.status?.using || "Claude Code")}, ${mcps.length - off.length} of ${mcps.length} MCP servers connected${off.length ? `. Not connected: ${esc(off.map((m) => m.name).join(", "))}` : ""}`));
   } else if (ev.type === "stream_event") {
     const e = ev.event;
     if (e.type === "message_start") c.cur = e.message.id;
@@ -404,6 +409,9 @@ function onChatEvent({ dir, ev }) {
       const el = c.tools.get(b.tool_use_id);
       if (el) el.className = `tool ${b.is_error ? "err" : "done"}`;
     }
+  } else if (ev.type === "app_user") { // a saved message of yours (live ones are drawn by send())
+    c.box.querySelector(".hint")?.remove();
+    c.box.append(h("div", "msg user", esc(ev.text)));
   } else if (ev.type === "result") {
     c.busy = false;
     const secs = Math.round((ev.duration_ms || 0) / 1000);
@@ -414,7 +422,7 @@ function onChatEvent({ dir, ev }) {
     if (ev.error || ev.stderr) c.box.append(h("div", "err-msg", esc(ev.error || ev.stderr)));
     c.box.querySelectorAll(".tool.run").forEach((t) => (t.className = "tool err"));
   }
-  if (dir === S.dir) { setBusy(c.busy); stick(was); }
+  if (dir === S.dir && !replay) { setBusy(c.busy); stick(was); }
 }
 D.chat.onEvent(onChatEvent);
 new MutationObserver((ms) => ms.forEach((m) => m.target.classList?.contains("chatbox") && m.addedNodes.forEach((n) => n.nodeType === 1 && appear(n))))
@@ -432,7 +440,7 @@ async function send() {
   const full = notes.length ? `[Edits I made in the Director app since your last turn. Keep them unless I ask otherwise:\n${notes.map((n) => `- ${n}`).join("\n")}]\n\n${text}` : text;
   c.busy = true; setBusy(true);
   $("msgs").scrollTop = $("msgs").scrollHeight;
-  const r = await D.chat.send({ dir: S.dir, text: full });
+  const r = await D.chat.send({ dir: S.dir, text: full, shown: text });
   if (r?.ok === false) { c.busy = false; setBusy(false); c.box.append(h("div", "err-msg", esc(r.error))); }
 }
 $("composer").onsubmit = (e) => { e.preventDefault(); send(); };
@@ -588,7 +596,49 @@ function updateEditBar() {
   $("timeline").classList.toggle("locked", lk);
 }
 function toEditView() { // edit over the clean film so the preview isn't on top of burned-in text
-  if (S.variant === "with-text" && film()) { S.variant = film().outputs?.clean ? "clean" : "film"; S.rel = null; selectSource(); }
+  if (!film() || (S.variant !== "with-text" && !S.rel)) return;
+  if (S.variant === "with-text") S.variant = film().outputs?.clean ? "clean" : "film";
+  S.rel = null; renderTabs(); selectSource();
+}
+// type straight into a callout or card on the video: double-click it there, or its bar in the timeline
+const isDouble = (e, k, i) => { const d = E.last; E.last = { k, i, t: e.timeStamp }; return !!d && d.k === k && d.i === i && e.timeStamp - d.t < 400; };
+function startEdit(kind, i, part = 0, at = null) {
+  if (locked()) return;
+  video.pause(); E.pending = { kind, i, part, at };
+  select(kind, i); // switches "With text" to the clean film: you edit live text, not a dashed box over burned-in text
+}
+function editInline(el, kind, i, part, at) {
+  const c = E.cfg[kind][i], parts = kind === "callouts" ? [el] : [...el.children]; // a card: title, then body
+  let snapped = false;
+  E.inline = el; el.classList.add("editing");
+  parts.forEach((p) => (p.contentEditable = "plaintext-only"));
+  const first = parts[Math.min(part, parts.length - 1)];
+  first.focus();
+  const caret = at && document.caretRangeFromPoint(at.x, at.y); // double-clicked on the video: caret where you clicked; from the timeline: select it all to retype
+  if (caret && first.contains(caret.startContainer)) getSelection().setBaseAndExtent(caret.startContainer, caret.startOffset, caret.startContainer, caret.startOffset);
+  else getSelection().selectAllChildren(first);
+  el.oninput = () => {
+    if (!snapped) { snapshot(); snapped = true; } // one undo step per edit
+    if (kind === "callouts") c.lines = el.innerText.split("\n").map((l) => l.trim()).filter(Boolean);
+    else { c.title = parts[0].innerText.trim(); c.body = parts[1].innerHTML.replace(/&nbsp;/g, " ").replace(/<div>/g, "<br>").replace(/<(?!\/?(br|em|b)\b)[^>]*>/g, ""); }
+    E.dirty = true; updateEditBar(); renderTimeline(); renderInspector();
+  };
+  // ends on Escape, a click anywhere else, or focus leaving the text (title ⇄ body inside a card doesn't count)
+  const done = () => {
+    if (E.inline !== el) return;
+    removeEventListener("pointerdown", outside, true); el.removeEventListener("focusout", blurred);
+    parts.forEach((p) => p.removeAttribute("contenteditable"));
+    el.classList.remove("editing"); el.oninput = el.onkeydown = null; E.inline = null;
+    renderPreview(true);
+  };
+  const outside = (e) => !el.contains(e.target) && done();
+  const blurred = (e) => !el.contains(e.relatedTarget) && done();
+  el.onkeydown = (e) => {
+    e.stopPropagation(); // typing never reaches the timeline shortcuts (Delete, ⌘Z)
+    if (e.key === "Escape") { e.preventDefault(); done(); }
+    else if (e.key === "Enter" && kind === "cards" && document.activeElement === parts[0]) { e.preventDefault(); parts[1].focus(); }
+  };
+  addEventListener("pointerdown", outside, true); el.addEventListener("focusout", blurred);
 }
 function select(kind, i, doSeek = true) {
   E.sel = { kind, i };
@@ -598,6 +648,7 @@ function select(kind, i, doSeek = true) {
 }
 function dragItem(e, kind, i, el, lane) {
   e.stopPropagation();
+  if (isDouble(e, kind, i)) { e.preventDefault(); return startEdit(kind, i); } // preventDefault: keep focus on the text being edited
   select(kind, i);
   if (locked()) return;
   const live = () => document.querySelector(`.item.${kind}[data-i="${i}"]`);
@@ -682,6 +733,7 @@ $("inspector").addEventListener("click", (e) => {
 // live preview of the edited callouts/cards over the clean film (dashed boxes over the burned-in version)
 let pvKey = "";
 function renderPreview(force) {
+  if (E.inline) return; // never rebuild under the caret
   const box = $("preview"), f = film();
   if (!E.cfg || !f || E.key !== f.key || video.classList.contains("hidden")) { if (box.childElementCount) box.innerHTML = ""; pvKey = ""; return; }
   const t = video.currentTime || 0, burned = !!S.shown?.includes("/with-text/");
@@ -704,11 +756,20 @@ function renderPreview(force) {
       el.style.transformOrigin = "0 0"; el.style.transform = `scale(${sc})`;
     }
     el.onpointerdown = (e) => dragPos(e, k, i, el, sc);
+    el.dataset.k = k; el.dataset.i = i; el.title = "Drag to move. Double-click to edit the text.";
     box.append(el);
+  }
+  const p = E.pending;
+  if (p) {
+    const el = box.querySelector(`.pv[data-k="${p.kind}"][data-i="${p.i}"]:not(.ghost)`);
+    if (el) { E.pending = null; editInline(el, p.kind, p.i, p.part, p.at); }
+    else if (E.sel?.kind !== p.kind || E.sel?.i !== p.i) E.pending = null; // selection moved on
   }
 }
 function dragPos(e, kind, i, el, sc) {
+  if (el.classList.contains("editing")) return; // clicks inside the text place the caret
   e.stopPropagation(); e.preventDefault();
+  if (isDouble(e, kind, i)) return startEdit(kind, i, e.target.closest("span") ? 1 : 0, { x: e.clientX, y: e.clientY });
   E.sel = { kind, i }; renderTimeline(); renderInspector();
   document.querySelectorAll(".pv.sel").forEach((x) => x.classList.remove("sel")); el.classList.add("sel");
   if (locked()) return;
@@ -741,7 +802,7 @@ $("add-card").onclick = () => addItem("cards");
 function undo() { if (!E.undo.length || locked()) return; E.cfg = JSON.parse(E.undo.pop()); if (E.sel && !E.cfg[E.sel.kind][E.sel.i]) E.sel = null; changed(); }
 $("undo").onclick = undo;
 document.addEventListener("keydown", (e) => {
-  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || dlg.open) return;
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable || dlg.open) return;
   if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); undo(); }
   else if ((e.key === "Backspace" || e.key === "Delete") && E.sel && !locked()) { e.preventDefault(); snapshot(); E.cfg[E.sel.kind].splice(E.sel.i, 1); E.sel = null; changed(); }
   else if (e.key === "Escape" && E.sel) { E.sel = null; renderTimeline(); renderInspector(); renderPreview(true); }

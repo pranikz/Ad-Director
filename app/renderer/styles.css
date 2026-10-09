@@ -202,6 +202,8 @@ label.check input { width: auto; accent-color: var(--primary); }
 .pv.ghost { color: transparent; text-shadow: none; outline: 1.5px dashed rgba(255, 255, 255, .85); }
 .pv.card.ghost { background: transparent; box-shadow: none; } .pv.card.ghost * { color: transparent !important; }
 .pv.sel { outline: 1.5px dashed #fff; outline-offset: 8px; }
+.pv.editing { outline: 1.5px solid #fff; outline-offset: 8px; cursor: text; }
+.pv[contenteditable], .pv [contenteditable] { outline: none; cursor: text; caret-color: currentColor; }
 .pv.locked { pointer-events: none; cursor: default; }
 
 /* media */
