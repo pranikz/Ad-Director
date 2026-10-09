@@ -247,6 +247,20 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 .servers li small { grid-column: 1 / -1; color: var(--text-3); overflow-wrap: anywhere; font-size: 12px; }
 .servers li small.ok { color: var(--ok); } .servers li small.bad { color: var(--bad); }
 
+/* launch animation */
+.intro { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: grid; place-items: center; -webkit-app-region: drag; }
+.intro-inner { display: grid; justify-items: center; gap: 18px; transform: translateY(-4vh); }
+.mark { position: relative; width: 112px; height: 112px; border-radius: 28px; background: var(--primary); box-shadow: var(--shadow); }
+.mark i { position: absolute; display: block; background: var(--on-primary); border-radius: 4px; }
+.m-slate { left: 22%; top: 30%; width: 56%; height: 10%; border-radius: 5px; transform-origin: 0% 50%; }
+.m-clip { top: 45%; height: 9%; transform-origin: 0% 50%; }
+.m1 { left: 22%; width: 21%; } .m2 { left: 45.5%; width: 15.5%; opacity: .55; } .m3 { left: 63%; width: 15%; opacity: .55; }
+.m4 { left: 22%; top: 60%; width: 34%; opacity: .28; }
+.m-head { left: 49.4%; top: 26%; width: 1.4%; height: 47%; border-radius: 2px; }
+.intro-word { font-size: 30px; font-weight: 600; letter-spacing: -.025em; display: flex; overflow: hidden; padding-bottom: 2px; }
+.intro-word span { display: inline-block; }
+.intro-tag { font-size: 14px; color: var(--text-2); }
+
 /* about */
 .about-head { display: flex; align-items: center; gap: 14px; }
 .about-icon { width: 56px; height: 56px; border-radius: 14px; }

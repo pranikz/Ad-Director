@@ -138,10 +138,12 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1560, height: 980, minWidth: 1100, minHeight: 700, backgroundColor: nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff", title: "Director",
     titleBarStyle: "hiddenInset", trafficLightPosition: { x: 16, y: 18 },
-    ...(process.env.DIRECTOR_SNAPSHOT && { show: false, paintWhenInitiallyHidden: true }), // dev screenshots render hidden: nothing to click by accident
+    show: false, // shown on ready-to-show, so the launch animation starts on a painted window (no white flash)
+    ...(process.env.DIRECTOR_SNAPSHOT && { paintWhenInitiallyHidden: true }), // dev screenshots stay hidden: nothing to click by accident
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  win.loadFile(path.join(__dirname, "renderer", "index.html"), process.env.DIRECTOR_SNAPSHOT && !process.env.DIRECTOR_INTRO ? { query: { nointro: "1" } } : {});
+  if (!process.env.DIRECTOR_SNAPSHOT) win.once("ready-to-show", () => win.show());
   nativeTheme.on("updated", () => !win.isDestroyed() && win.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff"));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: "deny" }; });
   win.webContents.on("will-navigate", (e) => e.preventDefault());
@@ -318,6 +320,11 @@ app.whenReady().then(() => {
   if (process.env.DIRECTOR_SNAPSHOT) win.webContents.on("console-message", (e) => console.log(`[renderer] ${e.message}`));
   if (process.env.DIRECTOR_SNAPSHOT) win.webContents.once("did-finish-load", async () => {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (process.env.DIRECTOR_FRAMES) { // dev: record the launch animation as numbered frames for N seconds
+      const t0 = Date.now(), dur = Number(process.env.DIRECTOR_FRAMES) * 1000; let n = 0;
+      while (Date.now() - t0 < dur) fs.writeFileSync(`${process.env.DIRECTOR_SNAPSHOT}-${String(n++).padStart(3, "0")}.png`, (await win.webContents.capturePage()).toPNG());
+      console.log(`frames=${n} seconds=${((Date.now() - t0) / 1000).toFixed(2)}`); app.quit(); return;
+    }
     await wait(1500);
     if (process.env.DIRECTOR_OPEN) await win.webContents.executeJavaScript(`openProject(${JSON.stringify(process.env.DIRECTOR_OPEN)})`).catch((e) => console.error(e));
     await wait(2500);

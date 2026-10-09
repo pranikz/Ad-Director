@@ -9,6 +9,16 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- launch animation: the Director mark assembles, the slate claps, the wordmark rises (long on first run, short after) -->
+    <div class="intro" id="intro" aria-hidden="true">
+      <div class="intro-inner">
+        <div class="mark" id="mark">
+          <i class="m-slate"></i><i class="m-clip m1"></i><i class="m-clip m2"></i><i class="m-clip m3"></i><i class="m-clip m4"></i><i class="m-head"></i>
+        </div>
+        <div class="intro-word" id="intro-word">Director</div>
+        <div class="intro-tag" id="intro-tag">An AI ad-film director for Claude Code</div>
+      </div>
+    </div>
     <header class="top">
       <div class="brand"><i class="ico" style="--i: url(icons/film-slate.svg)"></i>Director</div>
       <div class="crumb" id="crumb"></div>

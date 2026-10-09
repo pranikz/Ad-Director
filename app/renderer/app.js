@@ -883,6 +883,56 @@ $("empty-form").onsubmit = async (e) => {
   $("input").value = text; send();
 };
 
+// ── launch animation ──
+// First run: ~3 s, the mark assembles, the slate claps, the wordmark and tagline rise, then onboarding eases in.
+// Later opens: ~1 s version straight into the app. A click or key skips it; Reduce Motion skips it entirely.
+const NO_INTRO = new URLSearchParams(location.search).has("nointro") || matchMedia("(prefers-reduced-motion: reduce)").matches;
+function playIntro(firstRun) {
+  const intro = $("intro");
+  if (NO_INTRO) { intro.remove(); return Promise.resolve(); }
+  const EASE = "cubic-bezier(.2,.8,.2,1)", SNAP = "cubic-bezier(.34,1.56,.64,1)";
+  const k = firstRun ? 1 : 0.55; // the short version runs the same choreography, faster
+  const at = (s) => s * 1000 * k;
+  const word = $("intro-word");
+  word.innerHTML = [..."Director"].map((c) => `<span>${c}</span>`).join("");
+  const anims = [];
+  const a = (el, frames, delay, dur, easing = EASE) => anims.push(el.animate(frames, { delay: at(delay), duration: at(dur), easing, fill: "both" }));
+  a($("mark"), [{ opacity: 0, transform: "scale(.86)" }, { opacity: 1, transform: "scale(1)" }], 0, 0.45);
+  intro.querySelectorAll(".m-clip").forEach((el, i) => a(el, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 0.18 + i * 0.07, 0.42));
+  a(intro.querySelector(".m-head"), [{ transform: "translateX(-1900%)", opacity: 0 }, { opacity: 1, offset: 0.2 }, { transform: "translateX(0)", opacity: 1 }], 0.3, 0.55);
+  a(intro.querySelector(".m-slate"), [{ transform: "rotate(-24deg)" }, { transform: "rotate(-24deg)", offset: 0.55 }, { transform: "rotate(0deg)" }], 0.1, 0.85, SNAP);
+  a($("mark"), [{ transform: "scale(1)" }, { transform: "scale(.955)" }, { transform: "scale(1)" }], 0.93, 0.28); // the clap lands
+  if (firstRun) {
+    word.querySelectorAll("span").forEach((el, i) => a(el, [{ transform: "translateY(105%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }], 1.05 + i * 0.035, 0.5));
+    a($("intro-tag"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], 1.55, 0.5);
+  } else {
+    a(word, [{ opacity: 0 }, { opacity: 1 }], 0.8, 0.4);
+    $("intro-tag").remove();
+  }
+  const total = at(firstRun ? 2.75 : 1.55);
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (fast) => {
+      if (done) return;
+      done = true;
+      removeEventListener("keydown", skip); intro.removeEventListener("pointerdown", skip);
+      const out = intro.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.015)" }], { duration: fast ? 160 : 420, easing: EASE, fill: "forwards" });
+      enterApp(firstRun);
+      out.onfinish = () => { anims.forEach((x) => x.cancel()); intro.remove(); resolve(); };
+    };
+    const skip = () => finish(true);
+    addEventListener("keydown", skip); intro.addEventListener("pointerdown", skip);
+    setTimeout(() => finish(false), total);
+  });
+}
+// the destination eases in under the fading intro
+function enterApp(firstRun) {
+  const EASE = "cubic-bezier(.2,.8,.2,1)";
+  const rise = (el, delay) => el?.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 520, delay, easing: EASE, fill: "backwards" });
+  if (firstRun && !OB.classList.contains("hidden")) { rise(OB.querySelector(".ob-step:not(.hidden)"), 120); return; }
+  rise(document.querySelector(".top"), 60); rise(document.querySelector(".side"), 110); rise($("stage"), 160); rise(document.querySelector(".chat"), 210);
+}
+
 // ── boot ─────────────────────────────────────────────────────────────
 $("new-project").onclick = goHome;
 $("pick-project").onclick = $("empty-open").onclick = pickProject;
@@ -891,5 +941,8 @@ tick();
   S.settings = await D.settings.get();
   refreshPills();
   await renderProjects();
-  if (!S.settings.onboarded) showOnboarding(); else $("empty-input").focus();
+  const firstRun = !S.settings.onboarded;
+  if (firstRun) showOnboarding();
+  await playIntro(firstRun);
+  if (!firstRun) $("empty-input").focus();
 })();
