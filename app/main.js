@@ -219,6 +219,11 @@ function createWindow() {
   });
   h("projects:reveal", ({ dir, rel }) => shell.showItemInFolder(path.join(dir, rel || "")));
   h("open:external", ({ url }) => /^https?:/.test(url) && shell.openExternal(url));
+  h("pick:files", async () => {
+    const r = await dialog.showOpenDialog(win, { title: "Attach a reference (optional)", properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Video, image or PDF", extensions: ["mp4", "mov", "webm", "m4v", "jpg", "jpeg", "png", "webp", "pdf"] }] });
+    return r.canceled ? [] : r.filePaths;
+  });
   h("app:about", () => {
     const pkg = require("./package.json");
     let plugin = {};

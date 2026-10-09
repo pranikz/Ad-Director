@@ -27,12 +27,21 @@ The method itself is universal (any brand, product or tone: comedy, warmth, docu
 - **One project folder per job:** `scripts/new_project.sh <dir>`, default `~/Downloads/<brand>-<campaign>/`. Every artifact lives there, so the desktop app's timeline can show it.
 
 ## Phase 0: Intake
+**A reference video is optional.** Most jobs start from a brief alone. Starting points:
+- **A brief, however short** (the normal case), e.g. "15s Diwali spot for a kirana delivery app, Hinglish, funny". Fill the gaps with the defaults below and list your assumptions in one line. Ask only when a gap changes the work: exact claims, offers or legal lines are never guessed.
+- **A product or brand link:** read the page to get the product, its claims (verbatim), audience, tone and brand colours; then treat it as a brief.
+- **A vague idea** ("something for our app this festive season"): propose 3 directions in a short table, then continue with the one picked.
+- **A reference ad:** keep its device and mandatories and change everything else (step 2 below).
+- **Reference images or decks:** use them for brand look, product shape and claims, never as people references.
+
+**Defaults when the brief doesn't say:** India; Hindi or Hinglish; 4 concepts; a 15 s film plus a 10 s end card; 16:9 (add 9:16 if it's for social); observational comedy; and an end card built from the brand name and colours. Without a logo file, set the brand name as a clean wordmark, and say so.
+
 1. Collect what's missing (ask once, briefly):
    - the brand or subject, the product or message, and the **exact claims and mandatories**;
    - the audience and market (default India; which states or cities; for other markets, the countries and regulators), the **language and register** (Hindi, Hinglish, regional; or the market's language and dialect), the **tone**;
    - how many variations, the length (default: a 15 s film plus a 10 s end card), and the aspect ratios (16:9, 9:16, 1:1);
    - brand assets (logo, colours, fonts), any owned VO or music, and the do-nots.
-2. **If there is a reference film:**
+2. **If there is a reference film (optional):**
    - Look at a 1 fps contact sheet and transcribe it.
    - Name its device (the insight, pun, tension or ritual), its beat structure, its supers and its end card.
    - Lift reusable client assets from it (end-card frames, VO stems).

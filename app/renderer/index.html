@@ -33,15 +33,16 @@
       <section class="stage" id="stage">
         <div class="empty" id="empty">
           <h1>What are we making?</h1>
-          <p class="sub">Describe the ad, paste a product link or point at a reference video. Director writes the stories, casts real people, generates every shot and checks it.</p>
+          <p class="sub">Describe what you want made. A one-line brief is enough; a product link or a reference ad helps but is optional. Director writes the stories, casts real people, generates every shot and checks it.</p>
           <form class="box" id="empty-form">
-            <textarea id="empty-input" rows="2" placeholder="Four Hindi variations of ~/Downloads/ref.mp4, more realistic, same claims"></textarea>
-            <div class="box-bar"><span class="muted" id="empty-status"></span><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
+            <textarea id="empty-input" rows="2" placeholder="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny"></textarea>
+            <div class="box-bar"><div class="row"><button type="button" class="icon" id="empty-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><span class="muted" id="empty-status"></span></div><button class="round" id="empty-send" aria-label="Start" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button></div>
           </form>
           <div class="chips" id="chips">
-            <button class="chip" data-brief="Make 4 variations of my reference ad at ~/Downloads/ref.mp4. Same claims, more realistic, Hindi.">Variations of a reference ad</button>
             <button class="chip" data-brief="A 15 second Diwali spot for a kirana delivery app, Hinglish, warm and funny.">Diwali spot for a delivery app</button>
             <button class="chip" data-brief="Three 9:16 Reels for a chai brand, one per city: Mumbai, Chennai, Kolkata, in their own languages.">Regional Reels for a chai brand</button>
+            <button class="chip" data-brief="4 short ads for a UPI payments app aimed at small shopkeepers. Hindi, funny, 15 seconds each.">Ads for a payments app</button>
+            <button class="chip" data-brief="Make 4 variations of a reference ad, more realistic, same claims. I'll attach the video.">Remix a reference ad</button>
           </div>
           <div class="or">or <button class="linkish" id="empty-open">open an existing project folder</button></div>
         </div>
@@ -88,7 +89,7 @@
         <form class="composer" id="composer">
           <div class="box">
             <textarea id="input" rows="3" placeholder="Ask Director" disabled></textarea>
-            <div class="box-bar"><span class="muted" id="chat-status"></span>
+            <div class="box-bar"><div class="row"><button type="button" class="icon" id="chat-attach" title="Attach a reference video, image or PDF (optional)" aria-label="Attach a reference"><i class="ico" style="--i: url(icons/paperclip.svg)"></i></button><span class="muted" id="chat-status"></span></div>
               <div class="row">
                 <button type="button" class="round hidden" id="stop" aria-label="Stop"><i class="ico" style="--i: url(icons/stop.svg)"></i></button>
                 <button class="round" id="send" aria-label="Send" disabled><i class="ico" style="--i: url(icons/arrow-up.svg)"></i></button>

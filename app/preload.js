@@ -23,5 +23,6 @@ contextBridge.exposeInMainWorld("director", {
   onProjectChanged: on("project:changed"),
   openExternal: call("open:external"),
   about: call("app:about"),
+  pickFiles: call("pick:files"),
   revealPlugin: call("app:revealPlugin"),
 });

@@ -850,6 +850,18 @@ $("ob-gemini-save").onclick = async () => {
   st.textContent = r.ok ? "Key works" : String(r.error).slice(0, 160);
 };
 
+// ── optional references: attach adds "Reference: <path>" lines to the brief ──
+async function attachTo(inputId, sendId) {
+  const paths = await D.pickFiles();
+  if (!paths?.length) return;
+  const t = $(inputId);
+  t.value = `${t.value.trim()}${t.value.trim() ? "\n" : ""}${paths.map((p) => `Reference: ${p}`).join("\n")}`;
+  $(sendId).disabled = !t.value.trim() || (sendId === "send" && !S.dir);
+  t.focus();
+}
+$("empty-attach").onclick = () => attachTo("empty-input", "empty-send");
+$("chat-attach").onclick = () => S.dir && attachTo("input", "send");
+
 // ── home: a brief starts a project ──
 $("empty-input").addEventListener("input", () => ($("empty-send").disabled = !$("empty-input").value.trim()));
 $("empty-input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("empty-form").requestSubmit(); } };

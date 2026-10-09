@@ -1,6 +1,6 @@
 # Director
 
-**An AI ad-film director for Claude Code.** You give it a brief or a reference ad. It writes the stories, casts people who look real, generates every shot through your media MCP, checks each take like a picky director, adds hand-lettered motion graphics and hands back finished ads.
+**An AI ad-film director for Claude Code.** You give it a brief (a single line is enough), and optionally a product link or a reference ad. It writes the stories, casts people who look real, generates every shot through your media MCP, checks each take like a picky director, adds hand-lettered motion graphics and hands back finished ads.
 
 It's India-first: Hindi, Hinglish and regional languages, with Indian story archetypes, casting and compliance norms. An international agent covers other markets.
 
