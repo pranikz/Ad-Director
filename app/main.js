@@ -60,12 +60,14 @@ const publicSettings = () => ({ ...settings, geminiKey: undefined, anthropicKey:
 
 // ── projects ─────────────────────────────────────────────────────────
 const isProject = (d) => ["brief.md", "films", "timeline.json", "overlay"].some((f) => fs.existsSync(path.join(d, f)));
+// Director made it (inside the projects folder): deleting moves it to the Trash. A folder opened from elsewhere only leaves the list.
+const owned = (dir) => path.resolve(dir).startsWith(path.resolve(settings.projectsRoot) + path.sep);
 function listProjects() {
   const seen = new Set(), out = [];
   const add = (dir) => {
     if (seen.has(dir) || !fs.existsSync(dir) || !isProject(dir)) return;
     seen.add(dir);
-    out.push({ name: path.basename(dir), dir, mtime: fs.statSync(dir).mtimeMs });
+    out.push({ name: path.basename(dir), dir, mtime: fs.statSync(dir).mtimeMs, owned: owned(dir) });
   };
   settings.recent.forEach(add);
   try { fs.readdirSync(settings.projectsRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".")).forEach((e) => add(path.join(settings.projectsRoot, e.name))); } catch {}
@@ -200,6 +202,15 @@ function registerIpc() {
     remember(current);
     watch(current);
     return { dir: current, files: listFiles(current), session: !!settings.sessions[current] };
+  });
+  h("projects:remove", async ({ dir }) => {
+    dir = path.resolve(dir);
+    if (!listProjects().some((p) => p.dir === dir)) throw new Error("Not a project in the list");
+    sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir];
+    if (current === dir) { watcher?.close(); current = null; }
+    settings.recent = settings.recent.filter((d) => d !== dir); save();
+    if (owned(dir)) await shell.trashItem(dir);
+    return { ok: true };
   });
   h("projects:files", ({ dir }) => listFiles(dir));
   h("projects:timeline", async ({ dir, refresh }) => {

@@ -54,10 +54,10 @@ code { font: 12.5px var(--mono); background: var(--fill); padding: 1px 6px; bord
 .btn .ico { width: 15px; height: 15px; }
 .btn:disabled { opacity: .35; cursor: default; }
 .btn:active:not(:disabled), .icon:active, .round:active:not(:disabled), .chip:active, .pill:active, .tabs button:active,
-.seg button:active:not(:disabled), .dlg-nav button:active, .thumb .use:active { transform: scale(var(--press)); }
+.seg button:active:not(:disabled), .dlg-nav button:active, .thumb .use:active, .brand:active { transform: scale(var(--press)); }
 .projects li:active, .acct-opt:active { transform: scale(var(--press-lg)); }
 /* hover colours fade; a press goes down fast and springs back on a strong ease-out */
-.btn, .icon, .round, .chip, .pill, .tabs button, .seg button, .dlg-nav button, .projects li, .acct-opt, .opt, .thumb .use, .vlm li, .box {
+.btn, .icon, .round, .chip, .pill, .brand, .tabs button, .seg button, .dlg-nav button, .projects li, .acct-opt, .opt, .thumb .use, .vlm li, .box {
   transition: background-color .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease, box-shadow .15s ease, transform .16s var(--ease-out);
 }
 .icon { width: 30px; height: 30px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 999px; cursor: pointer; color: var(--text-2); }
@@ -76,7 +76,8 @@ label.check input { width: auto; accent-color: var(--primary); }
 /* top bar */
 .top { height: 48px; display: flex; align-items: center; gap: 14px; padding: 0 12px 0 84px; border-bottom: 1px solid var(--line); -webkit-app-region: drag; }
 .top button { -webkit-app-region: no-drag; }
-.brand { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.brand { display: flex; align-items: center; gap: 7px; font-weight: 600; height: 30px; padding: 0 10px; margin-left: -10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
+.brand:hover { background: var(--hover); }
 .brand .ico { width: 18px; height: 18px; }
 .crumb { color: var(--text-3); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
 .pills { display: flex; gap: 2px; align-items: center; }
@@ -86,18 +87,26 @@ label.check input { width: auto; accent-color: var(--primary); }
 .pill.ok i { background: var(--ok); opacity: 1; } .pill.warn i { background: var(--warn); opacity: 1; } .pill.bad i { background: var(--bad); opacity: 1; }
 
 /* layout */
-.app { height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) 408px; overflow: hidden; transition: grid-template-columns .42s var(--ease-drawer); }
+.app { --chat: clamp(320px, var(--chat-w, 408px), calc(100vw - 732px)); height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) var(--chat); overflow: hidden; transition: grid-template-columns .42s var(--ease-drawer); }
 /* home (no project open): no chat panel; it slides in from the right when a project opens */
 .app.home { grid-template-columns: 252px minmax(0, 1fr) 0px; }
-.app .chat { width: 408px; transition: opacity .3s ease, transform .42s var(--ease-drawer); }
+.app .chat { width: var(--chat); transition: opacity .3s ease, transform .42s var(--ease-drawer); }
 .app.home .chat { opacity: 0; transform: translateX(24px); pointer-events: none; }
+.app.resizing, .app.resizing .chat { transition: none; } .app.resizing { cursor: col-resize; user-select: none; }
+.chat-resize { position: absolute; z-index: 3; left: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; }
+.chat-resize::after { content: ""; position: absolute; left: 3.5px; top: 0; bottom: 0; width: 1px; background: var(--text-3); opacity: 0; transition: opacity .15s ease; }
+.chat-resize:hover::after, .resizing .chat-resize::after { opacity: 1; }
 .side { background: var(--bg-side); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .side-head { padding: 12px 12px 4px; display: grid; gap: 4px; }
 .side-head .btn { justify-content: flex-start; width: 100%; }
 .side-head input { border-radius: 999px; }
 .side-label { padding: 12px 20px 6px; font-size: 12px; color: var(--text-3); }
 .projects { list-style: none; overflow: auto; padding: 0 8px 12px; }
-.projects li { padding: 7px 12px; border-radius: 10px; cursor: pointer; display: grid; }
+.projects li { position: relative; padding: 7px 34px 7px 12px; border-radius: 10px; cursor: pointer; display: grid; }
+.projects .del { position: absolute; right: 4px; top: 50%; translate: 0 -50%; width: 26px; height: 26px; opacity: 0; }
+.projects .del .ico { width: 14px; height: 14px; }
+.projects li:hover .del, .projects .del:focus-visible { opacity: 1; }
+.projects .del:hover { color: var(--bad); }
 .projects li:hover { background: var(--hover); }
 .projects li.on { background: var(--fill-2); }
 .projects li b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -129,6 +138,7 @@ label.check input { width: auto; accent-color: var(--primary); }
 .tabs button { height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: var(--text-2); white-space: nowrap; cursor: pointer; }
 .tabs button:hover { background: var(--hover); color: var(--text); }
 .tabs button.on { background: var(--fill-2); color: var(--text); font-weight: 500; }
+.tabs .loose { display: inline-flex; align-items: center; gap: 6px; } .tabs .loose .ico { width: 13px; height: 13px; opacity: .6; }
 .seg { display: flex; background: var(--fill); border-radius: 999px; padding: 3px; flex: none; }
 .seg button { height: 26px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
 .seg button.on { background: var(--raised); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
@@ -207,7 +217,7 @@ label.check input { width: auto; accent-color: var(--primary); }
 .thumb .use:hover { background: var(--hover); }
 
 /* chat */
-.chat { border-left: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
+.chat { position: relative; border-left: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
 .chat-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px 6px 18px; }
 .msgs { overflow: auto; padding: 6px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 .hint { color: var(--text-3); padding: 6px 0; font-size: 13px; }

@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld("director", {
   gemini: { test: call("gemini:test") },
   projects: {
     list: call("projects:list"), create: call("projects:create"), pick: call("projects:pick"), open: call("projects:open"),
-    files: call("projects:files"), timeline: call("projects:timeline"), reveal: call("projects:reveal"),
+    files: call("projects:files"), timeline: call("projects:timeline"), reveal: call("projects:reveal"), remove: call("projects:remove"),
   },
   chat: { send: call("chat:send"), stop: call("chat:stop"), reset: call("chat:new"), onEvent: on("chat:event") },
   vlm: { check: call("vlm:check") },

@@ -21,7 +21,7 @@
       </div>
     </div>
     <header class="top">
-      <div class="brand"><i class="ico" style="--i: url(icons/film-slate.svg)"></i>Director</div>
+      <button class="brand" id="home" title="Home"><i class="ico" style="--i: url(icons/film-slate.svg)"></i>Director</button>
       <div class="crumb" id="crumb"></div>
       <div class="pills">
         <button class="pill" id="pill-claude" title="Claude Code"><i></i>Claude Code</button>
@@ -95,7 +95,8 @@
       </section>
 
       <aside class="chat">
-        <div class="chat-head"><h2>Director</h2><button class="btn sm plain" id="chat-new" title="Start a fresh conversation for this project">New chat</button></div>
+        <div class="chat-resize" id="chat-resize" title="Drag to resize. Double-click to reset."></div>
+        <div class="chat-head"><h2>Director</h2><div class="row"><button class="btn sm plain" id="chat-new" title="Start a fresh conversation for this project">New chat</button><button class="icon" id="chat-expand" title="Expand the chat" aria-label="Expand the chat"><i class="ico" style="--i: url(icons/arrows-out-simple.svg)"></i></button></div></div>
         <div class="msgs" id="msgs"><div class="hint">Open a project to start. Director runs on your own Claude Code, with your plugins, skills and MCPs.</div></div>
         <form class="composer" id="composer">
           <div class="box">

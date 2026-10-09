@@ -17,7 +17,8 @@ function glide(c) {
   if (!c.offsetWidth) return; // hidden: placed when it's shown
   const first = !c.style.getPropertyValue("--w");
   c.classList.toggle("glide-now", first);
-  for (const [k, v] of [["--x", on.offsetLeft], ["--y", on.offsetTop], ["--w", on.offsetWidth], ["--h", on.offsetHeight]]) c.style.setProperty(k, `${v}px`);
+  const r = on.getBoundingClientRect(), o = c.getBoundingClientRect(); // exact sub-pixel box: a rounded-up width overflows the tab strip and shows a scrollbar
+  for (const [k, v] of [["--x", r.left - o.left + c.scrollLeft], ["--y", r.top - o.top + c.scrollTop], ["--w", r.width], ["--h", r.height]]) c.style.setProperty(k, `${v}px`);
   if (first) { void c.offsetWidth; c.classList.remove("glide-now"); }
 }
 const mediaUrl = (rel, bust = "") => `media://p/${rel.split("/").map(encodeURIComponent).join("/")}${bust ? `?v=${bust}` : ""}`;
@@ -86,11 +87,26 @@ async function renderProjects() {
   for (const p of list) {
     const li = h("li", p.dir === S.dir ? "on" : "", `<b>${esc(p.name)}</b><span>${esc(p.dir.replace(/^\/Users\/[^/]+/, "~"))}</span>`);
     li.onclick = () => openProject(p.dir);
+    const del = h("button", "icon del", '<i class="ico" style="--i: url(icons/trash.svg)"></i>');
+    del.title = p.owned ? "Move to Trash" : "Remove from list"; del.setAttribute("aria-label", del.title);
+    del.onclick = (e) => { e.stopPropagation(); removeProject(p, li); };
+    li.append(del);
     ul.append(li);
     if (seen && !seen.has(p.dir)) appear(li);
   }
   S.seenProjects = new Set(list.map((p) => p.dir));
   if (!list.length) ul.append(h("li", "", '<span>No projects yet</span>'));
+}
+async function removeProject(p, li) {
+  const ask = p.owned
+    ? `Move "${p.name}" to the Trash? Its films, takes and edits go with it. You can put it back from the Trash.`
+    : `Remove "${p.name}" from the list? The folder stays where it is.`;
+  if (!confirm(ask)) return;
+  const r = await D.projects.remove({ dir: p.dir });
+  if (r?.ok === false) return alert(r.error);
+  S.chats.delete(p.dir); E.notes.delete(p.dir);
+  await li.animate([{ opacity: 1 }, { opacity: 0, transform: "translateX(-8px)" }], { duration: 160, easing: EASE_OUT, fill: "forwards" }).finished;
+  if (S.dir === p.dir) { E.dirty = false; goHome(); } else renderProjects();
 }
 function goHome() {
   if (!discardOk()) return;
@@ -130,10 +146,15 @@ function renderTabs() {
   const tabs = $("film-tabs");
   tabs.innerHTML = "";
   S.timeline.films.forEach((f, i) => {
-    const b = h("button", i === S.film ? "on" : "", esc(f.key.replace(/^(\d+)_/, "$1 · ").replace(/_/g, " ")));
+    const b = h("button", i === S.film && !S.rel ? "on" : "", esc(f.key.replace(/^(\d+)_/, "$1 · ").replace(/_/g, " ")));
     b.onclick = () => { if (!discardOk()) return; S.film = i; S.rel = null; renderTabs(); selectSource(); };
     tabs.append(b);
   });
+  if (S.rel) {
+    const b = h("button", "on loose", `${esc(S.rel.split("/").pop())}<i class="ico" style="--i: url(icons/x.svg)"></i>`);
+    b.title = "Close this file"; b.onclick = () => { S.rel = null; renderTabs(); selectSource(); };
+    tabs.append(b);
+  }
   glide(tabs);
 }
 const film = () => S.timeline.films[S.film];
@@ -265,7 +286,7 @@ function renderMedia() {
         const i = S.timeline.films.findIndex((f) => f.film === rel || Object.values(f.outputs || {}).includes(rel));
         if (i >= 0) {
           S.film = i; S.variant = rel === S.timeline.films[i].film ? "film" : rel.includes("/clean/") ? "clean" : "with-text"; S.rel = null; renderTabs(); selectSource();
-        } else { S.rel = rel; show(rel); renderTimeline(); }
+        } else { S.rel = rel; renderTabs(); selectSource(); }
         $("stage").scrollTo({ top: 0, behavior: "smooth" });
       };
       t.ondblclick = () => D.projects.reveal({ dir: S.dir, rel });
@@ -974,7 +995,27 @@ function enterApp(firstRun, fast) {
 }
 
 // ── boot ─────────────────────────────────────────────────────────────
-$("new-project").onclick = goHome;
+$("new-project").onclick = $("home").onclick = goHome;
+
+// ── chat panel width: drag its left edge, or expand/collapse ──
+const CHAT_W = 408, chatMax = () => Math.max(320, Math.min(900, innerWidth - 732)); // the stage keeps at least 480px
+function setChatW(w, keep = true) {
+  S.chatW = Math.round(w);
+  $("app").style.setProperty("--chat-w", `${S.chatW}px`);
+  const wide = S.chatW > CHAT_W + 40, x = $("chat-expand");
+  x.querySelector(".ico").style.setProperty("--i", `url(icons/arrows-${wide ? "in" : "out"}-simple.svg)`);
+  x.title = wide ? "Collapse the chat" : "Expand the chat"; x.setAttribute("aria-label", x.title);
+  if (keep) try { localStorage.chatW = S.chatW; } catch {}
+}
+try { setChatW(Number(localStorage.chatW) || CHAT_W, false); } catch { setChatW(CHAT_W, false); }
+$("chat-expand").onclick = () => setChatW(S.chatW > CHAT_W + 40 ? CHAT_W : chatMax());
+$("chat-resize").ondblclick = () => setChatW(CHAT_W);
+$("chat-resize").onpointerdown = (e) => {
+  const el = e.currentTarget, app = $("app");
+  el.setPointerCapture(e.pointerId); app.classList.add("resizing"); // dragging follows the pointer exactly: no easing
+  el.onpointermove = (m) => setChatW(Math.max(320, Math.min(chatMax(), innerWidth - m.clientX)), false);
+  el.onlostpointercapture = () => { el.onpointermove = el.onlostpointercapture = null; app.classList.remove("resizing"); setChatW(S.chatW); }; // pointerup, or the drag got interrupted
+};
 $("pick-project").onclick = $("empty-open").onclick = pickProject;
 tick();
 (async () => {
