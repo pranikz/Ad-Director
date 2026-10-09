@@ -92,6 +92,12 @@ async function renderProjects() {
     const del = h("button", "icon del", '<i class="ico" style="--i: url(icons/trash.svg)"></i>');
     del.title = p.owned ? "Move to Trash" : "Remove from list"; del.setAttribute("aria-label", del.title);
     del.onclick = (e) => { e.stopPropagation(); removeProject(p, li); };
+    li.oncontextmenu = async (e) => {
+      e.preventDefault();
+      const id = await D.menu({ items: [{ id: "open", label: "Open in Finder" }, "-", { id: "del", label: p.owned ? "Move to Trash" : "Remove from List" }] });
+      if (id === "open") D.projects.openFolder({ dir: p.dir });
+      if (id === "del") removeProject(p, li);
+    };
     li.append(del);
     ul.append(li);
     if (seen && !seen.has(p.dir)) appear(li);
@@ -113,7 +119,7 @@ async function removeProject(p, li) {
 function goHome() {
   if (!discardOk()) return;
   S.dir = null; E.key = null; E.cfg = null; E.sel = null;
-  $("work").classList.add("hidden"); $("empty").classList.remove("hidden"); $("crumb").textContent = ""; $("app").classList.add("home");
+  $("work").classList.add("hidden"); $("empty").classList.remove("hidden"); $("crumb").innerHTML = ""; $("app").classList.add("home");
   $("input").disabled = true; $("send").disabled = true;
   $("msgs").innerHTML = '<div class="hint">Describe what you want to make. Director starts a project for it.</div>';
   renderProjects(); $("empty-input").focus();
@@ -125,7 +131,7 @@ async function openProject(dir) {
   if (S.dir && S.dir !== r.dir) { E.key = null; E.cfg = null; E.sel = null; }
   S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null; S.seenMedia = null;
   ["film-tabs", "variant"].forEach((id) => $(id).style.removeProperty("--w"));
-  $("crumb").textContent = r.dir.replace(/^\/Users\/[^/]+/, "~");
+  $("crumb").innerHTML = `<span>${esc(r.dir.replace(/^\/Users\/[^/]+/, "~"))}</span>`;
   $("empty").classList.add("hidden"); $("work").classList.remove("hidden"); $("app").classList.remove("home");
   $("input").disabled = false; $("send").disabled = !$("input").value.trim(); $("input").focus();
   showChat(r.dir, r.session, r.history);
@@ -296,6 +302,7 @@ function renderMedia() {
         $("stage").scrollTo({ top: 0, behavior: "smooth" });
       };
       t.ondblclick = () => D.projects.reveal({ dir: S.dir, rel });
+      t.oncontextmenu = async (e) => { e.preventDefault(); if ((await D.menu({ items: [{ id: "show", label: "Show in Finder" }] })) === "show") D.projects.reveal({ dir: S.dir, rel }); };
       grid.append(t);
       if (seen && !seen.has(rel)) appear(t, Math.min(fresh++, 6) * 40);
     }
@@ -1075,6 +1082,7 @@ function enterApp(firstRun, fast) {
 
 // ── boot ─────────────────────────────────────────────────────────────
 $("new-project").onclick = $("home").onclick = goHome;
+$("crumb").onclick = () => S.dir && D.projects.openFolder({ dir: S.dir });
 
 // ── chat panel width: drag its left edge, or expand/collapse ──
 const CHAT_W = 408, chatMax = () => Math.max(320, Math.min(900, innerWidth - 732)); // the stage keeps at least 480px

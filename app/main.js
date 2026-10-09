@@ -226,6 +226,12 @@ function registerIpc() {
     try { return JSON.parse(fs.readFileSync(tl, "utf8")); } catch { return { films: [] }; }
   });
   h("projects:reveal", ({ dir, rel }) => shell.showItemInFolder(path.join(dir, rel || "")));
+  h("projects:openFolder", async ({ dir }) => { const err = await shell.openPath(path.resolve(dir)); if (err) throw new Error(err); return { ok: true }; });
+  // native right-click menu: items are [{ id, label }] or "-"; resolves to the chosen id, or null when dismissed
+  h("menu", ({ items }) => new Promise((resolve) => {
+    Menu.buildFromTemplate(items.map((it) => (it === "-" ? { type: "separator" } : { label: it.label, click: () => resolve(it.id) })))
+      .popup({ window: mainWin, callback: () => setTimeout(() => resolve(null), 0) }); // the click lands first; this only settles a dismissed menu
+  }));
   h("open:external", ({ url }) => /^https?:/.test(url) && shell.openExternal(url));
   h("pick:files", async () => {
     const r = await dialog.showOpenDialog(mainWin, { title: "Attach a reference (optional)", properties: ["openFile", "multiSelections"],

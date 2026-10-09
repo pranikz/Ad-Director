@@ -54,10 +54,10 @@ code { font: 12.5px var(--mono); background: var(--fill); padding: 1px 6px; bord
 .btn .ico { width: 15px; height: 15px; }
 .btn:disabled { opacity: .35; cursor: default; }
 .btn:active:not(:disabled), .icon:active, .round:active:not(:disabled), .chip:active, .pill:active, .tabs button:active,
-.seg button:active:not(:disabled), .dlg-nav button:active, .thumb .use:active, .brand:active { transform: scale(var(--press)); }
+.seg button:active:not(:disabled), .dlg-nav button:active, .thumb .use:active, .brand:active, .crumb:active { transform: scale(var(--press)); }
 .projects li:active, .acct-opt:active { transform: scale(var(--press-lg)); }
 /* hover colours fade; a press goes down fast and springs back on a strong ease-out */
-.btn, .icon, .round, .chip, .pill, .brand, .tabs button, .seg button, .dlg-nav button, .projects li, .acct-opt, .opt, .thumb .use, .vlm li, .box {
+.btn, .icon, .round, .chip, .pill, .brand, .crumb, .tabs button, .seg button, .dlg-nav button, .projects li, .acct-opt, .opt, .thumb .use, .vlm li, .box {
   transition: background-color .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease, box-shadow .15s ease, transform .16s var(--ease-out);
 }
 .icon { width: 30px; height: 30px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 999px; cursor: pointer; color: var(--text-2); }
@@ -79,8 +79,12 @@ label.check input { width: auto; accent-color: var(--primary); }
 .brand { display: flex; align-items: center; gap: 7px; font-weight: 600; height: 30px; padding: 0 10px; margin-left: -10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
 .brand:hover { background: var(--hover); }
 .brand .ico { width: 18px; height: 18px; }
-.crumb { color: var(--text-3); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
-.pills { display: flex; gap: 2px; align-items: center; }
+.crumb { display: flex; align-items: center; gap: 6px; min-width: 0; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--text-3); font-size: 13px; cursor: pointer; }
+.crumb:empty { display: none; }
+.crumb::before { content: ""; flex: none; width: 14px; height: 14px; background: currentColor; -webkit-mask: url(icons/folder-open.svg) center / contain no-repeat; mask: url(icons/folder-open.svg) center / contain no-repeat; }
+.crumb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crumb:hover { background: var(--hover); color: var(--text); }
+.pills { display: flex; gap: 2px; align-items: center; margin-left: auto; }
 .pill { display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border-radius: 999px; border: 0; background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
 .pill:hover { background: var(--hover); color: var(--text); }
 .pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); opacity: .6; transition: background-color .3s ease, opacity .3s ease; }
