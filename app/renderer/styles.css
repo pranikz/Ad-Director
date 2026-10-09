@@ -9,6 +9,9 @@
   --t-shot: #ececec; --t-dialogue: #e3ecfb; --t-callout: #fbefd3; --t-card: #dcf3e8; --t-end: #ece6fb; --t-qa: #fadcda;
   --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  /* motion: strong custom curves; UI motion stays under 300ms */
+  --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  --press: .97; --press-lg: .985; --rise: 8px;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   color-scheme: light dark;
 }
@@ -41,7 +44,7 @@ code { font: 12.5px var(--mono); background: var(--fill); padding: 1px 6px; bord
 .ico { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--i) center / contain no-repeat; mask: var(--i) center / contain no-repeat; }
 
 /* buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; background: var(--primary); color: var(--on-primary); font-weight: 500; cursor: pointer; white-space: nowrap; transition: background-color .15s, border-color .15s, opacity .15s, transform .08s; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid transparent; background: var(--primary); color: var(--on-primary); font-weight: 500; cursor: pointer; white-space: nowrap; }
 .btn:hover { opacity: .88; }
 .btn.ghost { background: transparent; color: var(--text); border-color: var(--line-2); }
 .btn.ghost:hover { background: var(--hover); opacity: 1; }
@@ -50,7 +53,13 @@ code { font: 12.5px var(--mono); background: var(--fill); padding: 1px 6px; bord
 .btn.sm { height: 28px; padding: 0 11px; font-size: 13px; }
 .btn .ico { width: 15px; height: 15px; }
 .btn:disabled { opacity: .35; cursor: default; }
-.btn:active:not(:disabled), .icon:active, .round:active:not(:disabled), .chip:active { transform: scale(.97); }
+.btn:active:not(:disabled), .icon:active, .round:active:not(:disabled), .chip:active, .pill:active, .tabs button:active,
+.seg button:active:not(:disabled), .dlg-nav button:active, .thumb .use:active { transform: scale(var(--press)); }
+.projects li:active, .acct-opt:active { transform: scale(var(--press-lg)); }
+/* hover colours fade; a press goes down fast and springs back on a strong ease-out */
+.btn, .icon, .round, .chip, .pill, .tabs button, .seg button, .dlg-nav button, .projects li, .acct-opt, .opt, .thumb .use, .vlm li, .box {
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease, box-shadow .15s ease, transform .16s var(--ease-out);
+}
 .icon { width: 30px; height: 30px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 999px; cursor: pointer; color: var(--text-2); }
 .icon:hover { background: var(--hover); color: var(--text); }
 .round { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 999px; background: var(--primary); color: var(--on-primary); cursor: pointer; flex: none; }
@@ -73,15 +82,15 @@ label.check input { width: auto; accent-color: var(--primary); }
 .pills { display: flex; gap: 2px; align-items: center; }
 .pill { display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border-radius: 999px; border: 0; background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer; }
 .pill:hover { background: var(--hover); color: var(--text); }
-.pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); opacity: .6; }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); opacity: .6; transition: background-color .3s ease, opacity .3s ease; }
 .pill.ok i { background: var(--ok); opacity: 1; } .pill.warn i { background: var(--warn); opacity: 1; } .pill.bad i { background: var(--bad); opacity: 1; }
 
 /* layout */
-.app { height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) 408px; overflow: hidden; transition: grid-template-columns .5s cubic-bezier(.22,1,.36,1); }
+.app { height: calc(100% - 48px); display: grid; grid-template-columns: 252px minmax(0, 1fr) 408px; overflow: hidden; transition: grid-template-columns .42s var(--ease-drawer); }
 /* home (no project open): no chat panel; it slides in from the right when a project opens */
 .app.home { grid-template-columns: 252px minmax(0, 1fr) 0px; }
-.app .chat { width: 408px; transition: opacity .35s ease; }
-.app.home .chat { opacity: 0; pointer-events: none; }
+.app .chat { width: 408px; transition: opacity .3s ease, transform .42s var(--ease-drawer); }
+.app.home .chat { opacity: 0; transform: translateX(24px); pointer-events: none; }
 .side { background: var(--bg-side); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .side-head { padding: 12px 12px 4px; display: grid; gap: 4px; }
 .side-head .btn { justify-content: flex-start; width: 100%; }
@@ -190,8 +199,9 @@ label.check input { width: auto; accent-color: var(--primary); }
 .group h3 { font-size: 13px; color: var(--text-2); font-weight: 500; margin-bottom: 8px; }
 .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .thumb { cursor: pointer; min-width: 0; }
-.thumb video, .thumb img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #0b0b0b; border-radius: 10px; transition: opacity .15s; }
+.thumb video, .thumb img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #0b0b0b; border-radius: 10px; transition: opacity .15s ease, transform .16s var(--ease-out); }
 .thumb:hover video, .thumb:hover img { opacity: .85; }
+.thumb:active:not(:has(.use:active)) :is(video, img) { transform: scale(var(--press-lg)); }
 .thumb span { display: flex; align-items: center; gap: 6px; padding: 6px 2px 0; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .thumb .use { height: 22px; padding: 0 9px; font-size: 11.5px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--text); cursor: pointer; flex: none; }
 .thumb .use:hover { background: var(--hover); }
@@ -215,7 +225,7 @@ label.check input { width: auto; accent-color: var(--primary); }
 .msg.assistant a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .tool { display: flex; gap: 8px; align-items: center; color: var(--text-3); font-size: 13px; min-width: 0; }
 .tool::before { content: ""; flex: none; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--ti) center / contain no-repeat; mask: var(--ti) center / contain no-repeat; }
-.tool.run { color: var(--text-2); } .tool.run::before { --ti: url(icons/circle-notch.svg); animation: spin 1s linear infinite; }
+.tool.run { color: var(--text-2); } .tool.run::before { --ti: url(icons/circle-notch.svg); animation: spin .8s linear infinite; }
 .tool.done::before { --ti: url(icons/check.svg); }
 .tool.err::before { --ti: url(icons/x-circle.svg); background: var(--bad); }
 .tool b { color: var(--text-2); font-weight: 500; flex: none; }
@@ -229,6 +239,13 @@ label.check input { width: auto; accent-color: var(--primary); }
 /* settings */
 dialog { margin: auto; border: 1px solid var(--line-2); border-radius: 16px; background: var(--bg); color: var(--text); width: min(880px, 92vw); height: min(660px, 86vh); box-shadow: var(--shadow); }
 dialog::backdrop { background: rgba(0, 0, 0, .35); }
+/* modal: scales up from the centre on open, leaves a little faster; Escape closes it instantly (keyboard stays snappy) */
+dialog { transition: opacity .2s var(--ease-out), transform .2s var(--ease-out), overlay .2s allow-discrete, display .2s allow-discrete; }
+dialog:not([open]) { opacity: 0; transform: scale(.98); transition-duration: .14s; }
+dialog::backdrop { transition: background-color .2s ease, overlay .2s allow-discrete, display .2s allow-discrete; }
+dialog:not([open])::backdrop { background: transparent; transition-duration: .14s; }
+@starting-style { dialog[open] { opacity: 0; transform: scale(.96); } dialog[open]::backdrop { background: transparent; } }
+dialog.instant, dialog.instant::backdrop { transition: none; }
 .dlg { display: grid; grid-template-columns: 200px 1fr; height: 100%; }
 .dlg-nav { background: var(--bg-side); border-right: 1px solid var(--line); padding: 16px 10px; display: grid; align-content: start; gap: 2px; }
 .dlg-nav h2 { padding: 0 10px 12px; }
@@ -303,14 +320,44 @@ a.btn { text-decoration: none; }
 .opt.on { border-color: var(--text); }
 .opt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .opt-head b { font-weight: 600; }
-.opt-head .state { font-size: 13px; color: var(--text-3); white-space: nowrap; }
+.opt-head .state { font-size: 13px; color: var(--text-3); white-space: nowrap; transition: color .2s ease; }
 .opt-head .state.ok { color: var(--ok); } .opt-head .state.bad { color: var(--bad); }
 .opt p { margin-top: -4px; }
 .cmd { display: flex; align-items: center; gap: 8px; background: var(--fill); border-radius: 10px; padding: 7px 8px 7px 12px; font: 12.5px var(--mono); overflow-x: auto; }
 .cmd code { background: none; padding: 0; flex: 1; white-space: nowrap; }
 .check-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .check-row .ico { width: 18px; height: 18px; }
-.check-row:not(.ok):not(.bad) .ico { animation: spin 1s linear infinite; color: var(--text-3); }
+.check-row:not(.ok):not(.bad) .ico { animation: spin .8s linear infinite; color: var(--text-3); }
 .check-row.ok .ico { color: var(--ok); } .check-row.bad .ico { color: var(--bad); }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* selected tab: one background that slides between options (app.js glide() sets its box) */
+.glide { position: relative; isolation: isolate; }
+.glide::after { content: ""; position: absolute; z-index: -1; left: 0; top: 0; width: var(--w, 0); height: var(--h, 0); transform: translate(var(--x, 0), var(--y, 0)); border-radius: 999px; background: var(--fill-2); pointer-events: none;
+  transition: transform .22s var(--ease-out), width .22s var(--ease-out), height .22s var(--ease-out); }
+.glide.glide-now::after { transition: none; }
+.glide button.on { background: transparent; box-shadow: none; }
+.seg.glide::after { background: var(--raised); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+.dlg-nav.glide::after { border-radius: 10px; }
+
+/* entrances: views and panels rise in whenever they're shown (CSS animations restart when display:none lifts) */
+@keyframes rise { from { opacity: 0; transform: translateY(var(--rise)); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(.85); filter: blur(2px); } }
+.work, .empty { animation: rise .32s var(--ease-out); }
+.inspector, .lockbar, .vlm { --rise: 4px; animation: rise .22s var(--ease-out); }
+.dlg-body section, .screen-empty { animation: fade .18s ease; }
+.round { animation: pop .18s var(--ease-out); } /* send ⇄ stop */
+.tool.done::before, .tool.err::before, .check-row.ok .ico, .check-row.bad .ico { animation: pop .22s var(--ease-out); }
+.ob-step > * { animation: rise .42s var(--ease-out) backwards; }
+.ob-step > :nth-child(2) { animation-delay: 40ms; } .ob-step > :nth-child(3) { animation-delay: 80ms; } .ob-step > :nth-child(4) { animation-delay: 120ms; }
+.ob-step > :nth-child(5) { animation-delay: 160ms; } .ob-step > :nth-child(n + 6) { animation-delay: 200ms; }
+
+/* Reduce Motion: fewer, gentler animations, not none. Fades and colour stay; movement, scaling and sliding go. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --press: 1; --press-lg: 1; }
+  @keyframes rise { from { opacity: 0; } }
+  @keyframes pop { from { opacity: 0; } }
+  .app, .glide::after { transition: none; }
+  dialog, .app .chat { transform: none !important; }
+  .tool.run::before, .check-row:not(.ok):not(.bad) .ico { animation-duration: 2s; }
+}

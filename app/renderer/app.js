@@ -4,6 +4,22 @@ const $ = (id) => document.getElementById(id);
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE_OUT = "cubic-bezier(.23,1,.32,1)";
+// something new arrived: a short rise (a fade only under Reduce Motion)
+const appear = (el, delay = 0) => el.animate(REDUCED ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 220, delay, easing: EASE_OUT, fill: "backwards" });
+// a swapped picture comes into focus instead of cutting (blur hides the jump between frames)
+const settle = (el) => el.animate([{ opacity: 0.5, filter: "blur(4px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 260, easing: EASE_OUT });
+// the selected tab's background slides to the new tab; first placement is instant
+function glide(c) {
+  const on = c.querySelector(".on");
+  if (!on) return c.style.removeProperty("--w");
+  if (!c.offsetWidth) return; // hidden: placed when it's shown
+  const first = !c.style.getPropertyValue("--w");
+  c.classList.toggle("glide-now", first);
+  for (const [k, v] of [["--x", on.offsetLeft], ["--y", on.offsetTop], ["--w", on.offsetWidth], ["--h", on.offsetHeight]]) c.style.setProperty(k, `${v}px`);
+  if (first) { void c.offsetWidth; c.classList.remove("glide-now"); }
+}
 const mediaUrl = (rel, bust = "") => `media://p/${rel.split("/").map(encodeURIComponent).join("/")}${bust ? `?v=${bust}` : ""}`;
 
 // editing state lives up here: the playhead loop and chat handlers read it from the first frame
@@ -65,13 +81,15 @@ async function refreshPills() {
 // ── projects ─────────────────────────────────────────────────────────
 async function renderProjects() {
   const list = await D.projects.list();
-  const ul = $("projects");
+  const ul = $("projects"), seen = S.seenProjects;
   ul.innerHTML = "";
   for (const p of list) {
     const li = h("li", p.dir === S.dir ? "on" : "", `<b>${esc(p.name)}</b><span>${esc(p.dir.replace(/^\/Users\/[^/]+/, "~"))}</span>`);
     li.onclick = () => openProject(p.dir);
     ul.append(li);
+    if (seen && !seen.has(p.dir)) appear(li);
   }
+  S.seenProjects = new Set(list.map((p) => p.dir));
   if (!list.length) ul.append(h("li", "", '<span>No projects yet</span>'));
 }
 function goHome() {
@@ -87,7 +105,8 @@ async function pickProject() { const r = await D.projects.pick(); if (r?.dir) { 
 async function openProject(dir) {
   const r = await D.projects.open({ dir });
   if (S.dir && S.dir !== r.dir) { E.key = null; E.cfg = null; E.sel = null; }
-  S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null;
+  S.dir = r.dir; S.files = r.files; S.film = 0; S.rel = null; S.seenMedia = null;
+  ["film-tabs", "variant"].forEach((id) => $(id).style.removeProperty("--w"));
   $("crumb").textContent = r.dir.replace(/^\/Users\/[^/]+/, "~");
   $("empty").classList.add("hidden"); $("work").classList.remove("hidden"); $("app").classList.remove("home");
   $("input").disabled = false; $("send").disabled = !$("input").value.trim(); $("input").focus();
@@ -115,6 +134,7 @@ function renderTabs() {
     b.onclick = () => { if (!discardOk()) return; S.film = i; S.rel = null; renderTabs(); selectSource(); };
     tabs.append(b);
   });
+  glide(tabs);
 }
 const film = () => S.timeline.films[S.film];
 function sourceFor(f, v) {
@@ -128,6 +148,7 @@ async function selectSource() {
     const has = !!film() && (b.dataset.v === "film" || !!film().outputs?.[b.dataset.v]);
     b.disabled = !has; b.classList.toggle("on", b.dataset.v === S.variant);
   });
+  glide($("variant"));
   const rel = S.rel || sourceFor(film(), S.variant);
   show(rel);
   renderTimeline();
@@ -137,11 +158,11 @@ function show(rel) {
   if (!rel) { video.removeAttribute("src"); video.load(); still.classList.add("hidden"); video.classList.remove("hidden"); return; }
   const isImg = /\.(jpe?g|png|webp)$/i.test(rel);
   video.classList.toggle("hidden", isImg); still.classList.toggle("hidden", !isImg);
-  if (isImg) { video.pause(); still.src = mediaUrl(rel, S.bust); }
+  if (isImg) { video.pause(); const u = mediaUrl(rel, S.bust); if (still.getAttribute("src") !== u) { still.src = u; still.addEventListener("load", () => settle(still), { once: true }); } }
   else if (!video.src.includes(mediaUrl(rel))) {
     S.wantT ??= video.currentTime || 0; // keep the playhead across With text / Clean / Film
     video.src = mediaUrl(rel, S.bust);
-    video.addEventListener("loadedmetadata", () => { if (S.wantT != null) video.currentTime = Math.min(S.wantT, video.duration || S.wantT); S.wantT = null; renderPreview(true); }, { once: true });
+    video.addEventListener("loadedmetadata", () => { if (S.wantT != null) video.currentTime = Math.min(S.wantT, video.duration || S.wantT); S.wantT = null; renderPreview(true); settle(video); }, { once: true });
   }
   S.shown = rel;
 }
@@ -211,7 +232,9 @@ $("tl-refresh").onclick = async () => { $("tl-refresh").disabled = true; S.bust 
 
 // ── media panel ──────────────────────────────────────────────────────
 function renderMedia() {
-  const box = $("media");
+  const box = $("media"), seen = S.seenMedia;
+  let fresh = 0;
+  S.seenMedia = new Set(S.files.flatMap((g) => g.files));
   box.innerHTML = "";
   for (const g of S.files) {
     const grp = h("div", "group", `<h3>${esc(g.label)} · ${g.files.length}</h3>`);
@@ -247,6 +270,7 @@ function renderMedia() {
       };
       t.ondblclick = () => D.projects.reveal({ dir: S.dir, rel });
       grid.append(t);
+      if (seen && !seen.has(rel)) appear(t, Math.min(fresh++, 6) * 40);
     }
     grp.append(grid); box.append(grp);
   }
@@ -372,6 +396,8 @@ function onChatEvent({ dir, ev }) {
   if (dir === S.dir) { setBusy(c.busy); stick(was); }
 }
 D.chat.onEvent(onChatEvent);
+new MutationObserver((ms) => ms.forEach((m) => m.target.classList?.contains("chatbox") && m.addedNodes.forEach((n) => n.nodeType === 1 && appear(n))))
+  .observe($("msgs"), { childList: true, subtree: true });
 
 async function send() {
   const text = $("input").value.trim();
@@ -405,7 +431,7 @@ async function openSettings(focusId) {
   $("s-mcp").value = JSON.stringify(s.mcpServers || {}, null, 2);
   renderServers();
   showSec(focusId ? $(focusId).closest("section").id : "sec-claude");
-  dlg.showModal();
+  dlg.classList.remove("instant"); dlg.showModal(); glide($("dlg-nav"));
   if (focusId) $(focusId).focus();
   const st = await D.claude.status();
   const box = $("claude-status");
@@ -452,8 +478,10 @@ $("about-plugin").onclick = () => D.revealPlugin();
 function showSec(id) {
   if (id === "sec-about") renderAbout();
   document.querySelectorAll("#dlg-nav button").forEach((b) => b.classList.toggle("on", b.dataset.sec === id));
+  glide($("dlg-nav"));
   document.querySelectorAll(".dlg-body section").forEach((x) => x.classList.toggle("hidden", x.id !== id));
 }
+dlg.addEventListener("cancel", () => dlg.classList.add("instant")); // Escape: no exit animation
 $("dlg-nav").onclick = (e) => { const b = e.target.closest("button[data-sec]"); if (b) showSec(b.dataset.sec); };
 const AISTUDIO = { type: "stdio", command: "uvx", args: ["--from", "git+https://github.com/galleri5/aistudio-mcp", "aistudio-mcp"], env: {} };
 const TEMPLATES = {
@@ -756,7 +784,12 @@ function obStep(n) {
   if (n === 2) obMedia();
 }
 function showOnboarding() { OB.classList.remove("hidden"); obStep(1); }
-async function finishOnboarding() { await saveSettings({ onboarded: true }); OB.classList.add("hidden"); refreshPills(); $("empty-input").focus(); }
+async function finishOnboarding() {
+  await saveSettings({ onboarded: true });
+  appear($("empty"));
+  await OB.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: "ease" }).finished;
+  OB.classList.add("hidden"); refreshPills(); $("empty-input").focus();
+}
 OB.addEventListener("click", async (e) => {
   const go = e.target.closest("[data-go]");
   if (go) return obStep(Number(go.dataset.go));
@@ -886,7 +919,7 @@ $("empty-form").onsubmit = async (e) => {
 // ── launch animation ──
 // First run: ~3 s, the mark assembles, the slate claps, the wordmark and tagline rise, then onboarding eases in.
 // Later opens: ~1 s version straight into the app. A click or key skips it; Reduce Motion skips it entirely.
-const NO_INTRO = new URLSearchParams(location.search).has("nointro") || matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NO_INTRO = new URLSearchParams(location.search).has("nointro") || REDUCED;
 function playIntro(firstRun) {
   const intro = $("intro");
   if (NO_INTRO) { intro.remove(); return Promise.resolve(); }
