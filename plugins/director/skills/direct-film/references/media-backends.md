@@ -34,7 +34,8 @@ Other text-to-image options on AI Studio: Ideogram 4.5 (best for text, but text 
 uv run --with "git+https://github.com/galleri5/aistudio-mcp" python scripts/run.py jobs.json OUTDIR --quote   # price only
 uv run --with "git+https://github.com/galleri5/aistudio-mcp" python scripts/run.py jobs.json OUTDIR           # spend + download
 ```
-- A field value of `"@plate_name"` chains an earlier job's output URL, so no upload is needed.
+- A field value of `"@plate_name"` chains another job's output URL, so no upload is needed. The plate can be in the same batch: the film waits for it, and isn't submitted (or paid for) if the plate fails.
+- Each job's status lands in `results.json` as soon as it changes, and a re-run skips jobs already completed, so a crash or one failed job never costs a second payment.
 - Up to about 12 jobs ran concurrently in practice (stills about 30 s, films 5–10 min each).
 
 **Pitfalls:**

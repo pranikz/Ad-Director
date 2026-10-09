@@ -3,7 +3,7 @@
 Per film key (films/<key>.mp4): shots (from qa/<key>.cuts, else detected now), dialogue (qa/<key>.dialogue.json:
 [{"start","end","text"}] if you saved one), QA issues (qa/<key>.vlm.json from the app's Gemini check), callouts + cards (overlay/cfg/<key>.json), end card span, outputs, takes.
 """
-import json, subprocess, sys
+import json, re, subprocess, sys
 from pathlib import Path
 
 p = Path(sys.argv[1]).resolve()
@@ -11,7 +11,7 @@ dur = lambda f: float(subprocess.run(["ffprobe", "-v", "error", "-show_entries",
 
 def cuts(key, film):
     c = p / "qa" / f"{key}.cuts"
-    if not c.exists():
+    if not c.exists() or c.stat().st_mtime < film.stat().st_mtime:  # a replaced film gets new cuts
         out = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(film), "-vf", "select='gt(scene,0.25)',showinfo", "-f", "null", "-"], capture_output=True, text=True).stderr
         c.parent.mkdir(exist_ok=True); c.write_text("\n".join(l.split("pts_time:")[1].split()[0] for l in out.splitlines() if "pts_time:" in l))
     return [float(x) for x in c.read_text().split()]
@@ -26,7 +26,7 @@ for film in sorted((p / "films").glob("*.mp4")):
     vlm = p / "qa" / f"{k}.vlm.json"
     issues = json.loads(vlm.read_text()).get("issues", []) if vlm.exists() else []
     out = {v: f"out/{v}/{k}.mp4" for v in ("with-text", "clean") if (p / "out" / v / f"{k}.mp4").exists()}
-    total = dur(p / out["with-text"]) if "with-text" in out else fd
+    total = dur(p / (out.get("with-text") or out["clean"])) if out else fd
     films.append({
         "key": k, "film": f"films/{film.name}", "outputs": out, "filmDuration": round(fd, 3), "duration": round(total, 3),
         "tracks": {
@@ -37,7 +37,7 @@ for film in sorted((p / "films").glob("*.mp4")):
             "qa": [{"start": float(i.get("time", 0)), "end": float(i.get("time", 0)) + 0.4, "label": f"{i.get('category', '')}: {i.get('note', '')}", "severity": i.get("severity", "minor")} for i in issues],
             "endcard": [{"start": round(fd, 3), "end": round(fd + 3.9, 3), "label": "Offer"}, {"start": round(fd + 3.9, 3), "end": round(total, 3), "label": "Packshot"}] if total > fd + 1 else [],
         },
-        "takes": sorted(f"films/takes/{x.name}" for x in (p / "films" / "takes").glob(f"*{k.split('_', 1)[-1]}*.mp4")),
+        "takes": sorted(f"films/takes/{x.name}" for x in (p / "films" / "takes").glob("*.mp4") if re.search(rf"(^|_){re.escape(k.split('_', 1)[-1])}(_|$)", x.stem)),
     })
 (p / "timeline.json").write_text(json.dumps({"project": p.name, "films": films}, indent=1, ensure_ascii=False))
 print(f"{p / 'timeline.json'}: {len(films)} films")

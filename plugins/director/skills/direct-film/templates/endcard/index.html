@@ -97,14 +97,15 @@
         percent: '<circle cx="15" cy="15" r="5"/><circle cx="33" cy="33" r="5"/><path d="M36 10L12 38" class="a"/>',
         bolt: '<path d="M27 4L10 28h13l-3 16 18-25H25z" class="a"/>',
       };
-      const O = B.offer;
+      const O = B.offer || {}; // the offer beat is optional
       $("pillText").innerHTML = O.pill || ""; if (!O.pill) $("pill").style.display = "none";
       if (O.toggle) $("toggleText").textContent = O.toggle; else $("toggle").style.display = "none";
-      $("upto").innerHTML = O.eyebrow || ""; $("value").innerHTML = O.value; $("suffix").innerHTML = O.suffix || "";
+      $("upto").innerHTML = O.eyebrow || ""; $("value").innerHTML = O.value || ""; $("suffix").innerHTML = O.suffix || "";
+      if (!O.value) $("rate").style.display = "none";
       $("chips").innerHTML = (O.chips || []).map((c) => `<div class="chip"><svg viewBox="0 0 48 48" fill="none" stroke="var(--navy)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${(ICON[c.icon] || ICON.check).replace(/class="a"/g, 'stroke="var(--orange)"')}</svg><span>${c.title}<small>${c.sub || ""}</small></span></div>`).join("");
       $("tagline").innerHTML = O.tagline || "";
-      const P = B.pack;
-      $("logo").src = P.logo; $("logo").alt = P.logoAlt || "";
+      const P = B.pack || {}; P.lines ||= [];
+      if (P.logo) { $("logo").src = P.logo; $("logo").alt = P.logoAlt || ""; } else $("logo").remove();
       if (P.art) $("art").src = P.art; else $("art").remove();
       if (P.hills === false) $("hills").style.display = "none";
       if (!P.art) $("pack").classList.add("noart");
@@ -127,7 +128,7 @@
       // B — packshot (3.9–10s); line timings come from the brand config so they sync to the VO
       if (P.hills !== false) tl.from("#hills", { y: 120, duration: .8, ease: E }, 3.9);
       if (P.art) tl.from("#art", { scaleY: .55, scaleX: .8, opacity: 0, duration: 1.4, ease: "power2.out" }, 4.0);
-      tl.from("#logo", { y: 30, opacity: 0, duration: .5, ease: E }, 4.05);
+      if (P.logo) tl.from("#logo", { y: 30, opacity: 0, duration: .5, ease: E }, 4.05);
       P.lines.forEach((l, i) => tl.from(`#l${i}`, { y: 26, opacity: 0, duration: .45, ease: E }, l.t));
       if (P.rule) tl.from("#rule", { opacity: 0, duration: .6, ease: E }, P.ruleAt || 8.1);
       if (P.art) tl.to("#art", { rotation: 1.2, duration: 2, ease: "sine.inOut", transformOrigin: "50% 96%" }, 6.0);
