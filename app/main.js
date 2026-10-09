@@ -88,7 +88,8 @@ function listFiles(dir) {
   return Object.entries(groups).map(([rel, label]) => {
     let files = [];
     try { files = fs.readdirSync(path.join(dir, rel)).filter((f) => MEDIA.test(f)).sort().map((f) => `${rel}/${f}`); } catch {}
-    return { label, rel, files };
+    const mt = Object.fromEntries(files.map((f) => { try { return [f, Math.round(fs.statSync(path.join(dir, f)).mtimeMs)]; } catch { return [f, 0]; } })); // the app reloads a file exactly when it changes
+    return { label, rel, files, mt };
   }).filter((g) => g.files.length);
 }
 

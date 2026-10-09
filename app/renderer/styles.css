@@ -242,6 +242,8 @@ label.check input { width: auto; accent-color: var(--primary); }
 .tool.err::before { --ti: url(icons/x-circle.svg); background: var(--bad); }
 .tool b { color: var(--text-2); font-weight: 500; flex: none; }
 .tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool .el { margin-left: auto; padding-left: 8px; flex: none; font: 12px var(--mono); font-style: normal; color: var(--text-3); }
+.tool:not(.run) .el { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .meta { color: var(--text-3); font-size: 12px; }
 .err-msg { color: var(--bad); white-space: pre-wrap; font-size: 13px; }

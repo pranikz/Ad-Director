@@ -21,6 +21,8 @@ function glide(c) {
   for (const [k, v] of [["--x", r.left - o.left + c.scrollLeft], ["--y", r.top - o.top + c.scrollTop], ["--w", r.width], ["--h", r.height]]) c.style.setProperty(k, `${v}px`);
   if (first) { void c.offsetWidth; c.classList.remove("glide-now"); }
 }
+// a file's version is its modified time, so the player and thumbnails reload exactly when Director rewrites it
+const ver = (rel) => { for (const g of S.files) if (g.mt?.[rel]) return g.mt[rel]; return S.bust; };
 const mediaUrl = (rel, bust = "") => `media://p/${rel.split("/").map(encodeURIComponent).join("/")}${bust ? `?v=${bust}` : ""}`;
 
 // editing state lives up here: the playhead loop and chat handlers read it from the first frame
@@ -158,15 +160,16 @@ function renderTabs() {
   glide(tabs);
 }
 const film = () => S.timeline.films[S.film];
+const exists = (rel) => !!rel && S.files.some((g) => g.files.includes(rel)); // timeline.json can name a cut that's being rebuilt right now
 function sourceFor(f, v) {
   if (!f) return null;
   if (v === "film") return f.film;
-  return f.outputs?.[v] || f.outputs?.["with-text"] || f.outputs?.clean || f.film;
+  return [f.outputs?.[v], f.outputs?.["with-text"], f.outputs?.clean].find(exists) || f.film;
 }
 async function selectSource() {
   await ensureCfg();
   document.querySelectorAll("#variant button").forEach((b) => {
-    const has = !!film() && (b.dataset.v === "film" || !!film().outputs?.[b.dataset.v]);
+    const has = !!film() && (b.dataset.v === "film" || exists(film().outputs?.[b.dataset.v]));
     b.disabled = !has; b.classList.toggle("on", b.dataset.v === S.variant);
   });
   glide($("variant"));
@@ -179,10 +182,10 @@ function show(rel) {
   if (!rel) { video.removeAttribute("src"); video.load(); still.classList.add("hidden"); video.classList.remove("hidden"); return; }
   const isImg = /\.(jpe?g|png|webp)$/i.test(rel);
   video.classList.toggle("hidden", isImg); still.classList.toggle("hidden", !isImg);
-  if (isImg) { video.pause(); const u = mediaUrl(rel, S.bust); if (still.getAttribute("src") !== u) { still.src = u; still.addEventListener("load", () => settle(still), { once: true }); } }
-  else if (!video.src.includes(mediaUrl(rel))) {
+  if (isImg) { video.pause(); const u = mediaUrl(rel, ver(rel)); if (still.getAttribute("src") !== u) { still.src = u; still.addEventListener("load", () => settle(still), { once: true }); } }
+  else if (video.getAttribute("src") !== mediaUrl(rel, ver(rel))) { // a new file, or the same file rebuilt
     S.wantT ??= video.currentTime || 0; // keep the playhead across With text / Clean / Film
-    video.src = mediaUrl(rel, S.bust);
+    video.src = mediaUrl(rel, ver(rel));
     video.addEventListener("loadedmetadata", () => { if (S.wantT != null) video.currentTime = Math.min(S.wantT, video.duration || S.wantT); S.wantT = null; renderPreview(true); settle(video); }, { once: true });
   }
   S.shown = rel;
@@ -250,11 +253,13 @@ lanesEl.addEventListener("pointerdown", (e) => {
   addEventListener("pointermove", move); addEventListener("pointerup", up);
 });
 document.querySelectorAll("#variant button").forEach((b) => (b.onclick = () => { S.variant = b.dataset.v; S.rel = null; selectSource(); }));
-$("tl-refresh").onclick = async () => { $("tl-refresh").disabled = true; S.bust = Date.now(); await loadTimeline(true); renderMedia(); $("tl-refresh").disabled = false; };
+$("tl-refresh").onclick = async () => { $("tl-refresh").disabled = true; S.files = await D.projects.files({ dir: S.dir }); await loadTimeline(true); renderMedia(); $("tl-refresh").disabled = false; };
 
 // ── media panel ──────────────────────────────────────────────────────
 function renderMedia() {
-  const box = $("media"), seen = S.seenMedia;
+  const box = $("media"), seen = S.seenMedia, sig = JSON.stringify(S.files);
+  if (sig === S.mediaSig && box.childElementCount) return;
+  S.mediaSig = sig;
   let fresh = 0;
   S.seenMedia = new Set(S.files.flatMap((g) => g.files));
   box.innerHTML = "";
@@ -265,8 +270,8 @@ function renderMedia() {
       const t = h("div", "thumb");
       const name = rel.split("/").pop();
       t.innerHTML = /\.(jpe?g|png|webp)$/i.test(rel)
-        ? `<img loading="lazy" src="${mediaUrl(rel, S.bust)}" alt="">`
-        : `<video muted preload="metadata" src="${mediaUrl(rel, S.bust)}#t=1"></video>`;
+        ? `<img loading="lazy" src="${mediaUrl(rel, ver(rel))}" alt="">`
+        : `<video muted preload="metadata" src="${mediaUrl(rel, ver(rel))}#t=1"></video>`;
       const cap = h("span", "", esc(name));
       if (g.rel === "films/takes" && film()) {
         const use = h("button", "use", "Use"); use.title = `Use this take as ${film().key}`;
@@ -276,7 +281,7 @@ function renderMedia() {
           const r = await D.edit.useTake({ dir: S.dir, rel, key: film().key });
           if (r?.ok === false) return alert(r.error);
           E.needsRender = true; addNote(`I swapped films/${film().key}.mp4 for the take ${rel}.`);
-          S.bust = Date.now(); S.variant = "film"; await loadTimeline(false); updateEditBar();
+          S.files = await D.projects.files({ dir: S.dir }); S.variant = "film"; await loadTimeline(false); renderMedia(); updateEditBar();
         };
         cap.prepend(use);
       }
@@ -302,7 +307,7 @@ D.onProjectChanged(({ dir }) => {
   if (dir !== S.dir) return;
   clearTimeout(changeTimer);
   changeTimer = setTimeout(async () => {
-    S.files = await D.projects.files({ dir }); S.bust = Date.now();
+    S.files = await D.projects.files({ dir });
     if (!E.dirty) E.key = null; // pick up Director's latest config; unsaved edits are never overwritten
     renderMedia(); await loadTimeline(false);
   }, 400);
@@ -373,9 +378,13 @@ function toolLabel(name, input = {}) {
 function onChatEvent({ dir, ev }, replay) {
   const c = chatCtx(dir), was = near();
   if (ev.type === "system" && ev.subtype === "init") {
-    const mcps = ev.mcp_servers || [], off = mcps.filter((m) => m.status !== "connected");
+    const mcps = ev.mcp_servers || [], up = mcps.filter((m) => m.status === "connected");
     if (!replay) { S.mcpLive = mcps; refreshPills(); }
-    c.box.append(h("div", "meta", `${esc(ev.model || "Claude Code")} via ${esc(S.status?.using || "Claude Code")}, ${mcps.length - off.length} of ${mcps.length} MCP servers connected${off.length ? `. Not connected: ${esc(off.map((m) => m.name).join(", "))}` : ""}`));
+    // only the media servers matter here; every connector on the account goes in the tooltip
+    const media = (S.settings?.mediaServers || []).map((n) => `${n} ${mcps.find((m) => m.name === n)?.status?.replace("connected", "✓") || "not loaded"}`);
+    const line = h("div", "meta", `${esc(ev.model || "Claude Code")} · ${media.length ? `media: ${esc(media.join(", "))}` : `${up.length} of ${mcps.length} MCP servers`}`);
+    line.title = mcps.map((m) => `${m.name}: ${m.status}`).join("\n");
+    c.box.append(line);
   } else if (ev.type === "stream_event") {
     const e = ev.event;
     if (e.type === "message_start") c.cur = e.message.id;
@@ -400,6 +409,7 @@ function onChatEvent({ dir, ev }, replay) {
         const [verb, what] = toolLabel(b.name, b.input);
         const el = h("div", "tool run", `<b>${esc(verb)}</b><span>${esc(String(what || "").slice(0, 140))}</span>`);
         el.title = JSON.stringify(b.input, null, 1).slice(0, 2000);
+        if (!replay) el.dataset.t0 = Date.now();
         c.tools.set(b.id, el); c.box.append(el);
       }
     }
@@ -438,11 +448,19 @@ async function send() {
   const notes = E.notes.get(S.dir) || [];
   E.notes.delete(S.dir);
   const full = notes.length ? `[Edits I made in the Director app since your last turn. Keep them unless I ask otherwise:\n${notes.map((n) => `- ${n}`).join("\n")}]\n\n${text}` : text;
-  c.busy = true; setBusy(true);
+  c.busy = true; c.started = Date.now(); setBusy(true);
   $("msgs").scrollTop = $("msgs").scrollHeight;
   const r = await D.chat.send({ dir: S.dir, text: full, shown: text });
   if (r?.ok === false) { c.busy = false; setBusy(false); c.box.append(h("div", "err-msg", esc(r.error))); }
 }
+// long steps show how long they've been going, so a slow encode never looks like a freeze
+const since = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`; };
+setInterval(() => {
+  const c = S.dir && S.chats.get(S.dir);
+  if (!c?.busy) return;
+  if (c.started) $("chat-status").textContent = `Director is working… ${since(c.started)}`;
+  document.querySelectorAll("#msgs .tool.run[data-t0]").forEach((t) => { if (Date.now() - t.dataset.t0 > 5000) (t.querySelector(".el") || t.appendChild(h("i", "el"))).textContent = since(+t.dataset.t0); });
+}, 1000);
 $("composer").onsubmit = (e) => { e.preventDefault(); send(); };
 $("input").addEventListener("input", () => ($("send").disabled = !$("input").value.trim() || !S.dir));
 $("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
@@ -817,7 +835,7 @@ $("save-render").onclick = async () => {
   if (r?.ok === false) { updateEditBar(); $("edit-state").textContent = "Render failed"; alert(r.error); return; }
   if (E.dirty) addNote(`I edited the callouts/cards of ${f.key} in the timeline (overlay/cfg/${f.key}.json) and re-rendered out/with-text/${f.key}.mp4.`);
   E.dirty = false; E.needsRender = false; E.undo = [];
-  S.bust = Date.now(); S.variant = "with-text"; S.rel = null;
+  S.files = await D.projects.files({ dir: S.dir }); S.variant = "with-text"; S.rel = null; renderMedia();
   await loadTimeline(false); updateEditBar();
   $("edit-state").textContent = "Saved and rendered ✓";
 };

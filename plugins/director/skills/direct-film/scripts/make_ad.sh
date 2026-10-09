@@ -16,6 +16,6 @@ if [ "$3" != "--clean" ]; then
 else ti=1; dest=$p/out/clean; fi
 inputs+=(-i $tail)
 if [ -f $p/audio/tail.m4a ]; then inputs+=(-i $p/audio/tail.m4a); ta="[$((ti+1)):a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:$td,asetpts=PTS-STARTPTS,afade=t=out:st=$(echo "$td-0.5"|bc):d=0.5[a1]"
-else ta="anullsrc=r=48000:cl=stereo,atrim=0:$td[a1]"; fi
+else ta="anullsrc=r=48000:cl=stereo,atrim=0:${td}[a1]"; fi
 ffmpeg -v error -y "${inputs[@]}" -filter_complex "$vf;[$ti:v]fps=24,format=yuv420p,setsar=1[v1];[v0][v1]concat=n=2:v=1:a=0[v];[0:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:$fd,afade=t=out:st=$(echo "$fd-0.15"|bc):d=0.15[a0];$ta;[a0][a1]concat=n=2:v=0:a=1,loudnorm=I=-16:TP=-1.5:LRA=11[a]" -map "[v]" -map "[a]" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -ar 48000 -movflags +faststart $dest/$k.mp4
 echo "$dest/$k.mp4 $(ffprobe -v error -show_entries format=duration -of csv=p=0 $dest/$k.mp4)s"
