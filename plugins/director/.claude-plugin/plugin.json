@@ -1,6 +1,6 @@
 {
   "name": "director",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Director: ad-film director agents and a skill. Realistic, story-driven AI films covering concepts, casting, multi-shot video through any media MCP, QA, hand-lettered HyperFrames motion graphics, end cards and delivery. The `director` agent defaults to India (Hindi, Hinglish and regional languages); the `director-international` agent covers the US, UK, Europe, the Middle East and Africa, and Southeast Asia. Locales are pluggable.",
   "author": {
     "name": "Pratyush Mahapatra",

@@ -1,7 +1,7 @@
 {
   "name": "director-app",
   "productName": "Director",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Desktop studio for Director, an AI ad-film director agent: chat with your own Claude Code, connect any media MCP, review and edit films on a timeline.",
   "main": "main.js",
   "author": "Pratyush Mahapatra",
