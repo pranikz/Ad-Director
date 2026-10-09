@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "check": "node --check main.js && node --check preload.js && node --check lib/claude.js && node --check lib/mcp.js && node --check lib/gemini.js && node --check lib/system.js && node --check renderer/app.js && node --test test/*.test.js",
-    "dist": "electron-packager . Director --platform=darwin --arch=arm64 --out=dist --overwrite --icon=assets/icon.icns --extra-resource=../plugins/director --ignore='^/dist' --ignore='^/test'"
+    "dist": "electron-packager . Director --platform=darwin --arch=arm64 --out=dist --overwrite --icon=assets/icon.icns --extra-resource=../plugins/director --ignore='^/dist' --ignore='^/test'",
+    "test:reopen": "electron test/reopen.electron.js"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",

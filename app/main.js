@@ -89,15 +89,17 @@ function listFiles(dir) {
 }
 
 let current = null; // the open project dir; the media:// protocol only serves files inside it
+let mainWin = null, ipcRegistered = false;
+const toWindow = (ch, data) => mainWin && !mainWin.isDestroyed() && mainWin.webContents.send(ch, data);
 let watcher = null;
-function watch(dir, win) {
+function watch(dir) {
   watcher?.close();
   let t = null;
   try {
     watcher = fs.watch(dir, { recursive: true }, (_, f) => {
       if (!f || /(^|\/)(node_modules|renders|\.git)\//.test(f)) return;
       clearTimeout(t);
-      t = setTimeout(() => win.webContents.send("project:changed", { dir }), 700);
+      t = setTimeout(() => toWindow("project:changed", { dir }), 700);
     });
   } catch {}
 }
@@ -115,7 +117,7 @@ function systemFor(dir) {
     geminiKey() ? "A Gemini API key is configured (GEMINI_API_KEY is set): scripts/transcribe.py works, and the person can run a Gemini VLM check from the app." : "No Gemini key is configured; do QA yourself from contact sheets and the video-trim MCP if present.",
   ].join("\n");
 }
-function sessionFor(dir, win) {
+function sessionFor(dir) {
   if (sessions.has(dir)) return sessions.get(dir);
   const bin = findClaude(settings.claudePath);
   if (!bin) throw new Error("Claude Code not found. Install it (https://claude.com/claude-code) or set its path in Settings.");
@@ -126,7 +128,7 @@ function sessionFor(dir, win) {
   });
   s.on("event", (ev) => {
     if (ev.type === "system" && ev.subtype === "init") { settings.sessions[dir] = ev.session_id; save(); }
-    if (!win.isDestroyed()) win.webContents.send("chat:event", { dir, ev });
+    toWindow("chat:event", { dir, ev });
   });
   sessions.set(dir, s);
   return s;
@@ -134,20 +136,8 @@ function sessionFor(dir, win) {
 function resetSessions() { for (const s of sessions.values()) s.stop(); sessions.clear(); }
 
 // ── window + IPC ─────────────────────────────────────────────────────
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 1560, height: 980, minWidth: 1100, minHeight: 700, backgroundColor: nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff", title: "Director",
-    titleBarStyle: "hiddenInset", trafficLightPosition: { x: 16, y: 18 },
-    show: false, // shown on ready-to-show, so the launch animation starts on a painted window (no white flash)
-    ...(process.env.DIRECTOR_SNAPSHOT && { paintWhenInitiallyHidden: true }), // dev screenshots stay hidden: nothing to click by accident
-    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
-  win.loadFile(path.join(__dirname, "renderer", "index.html"), process.env.DIRECTOR_SNAPSHOT && !process.env.DIRECTOR_INTRO ? { query: { nointro: "1" } } : {});
-  if (!process.env.DIRECTOR_SNAPSHOT) win.once("ready-to-show", () => win.show());
-  nativeTheme.on("updated", () => !win.isDestroyed() && win.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff"));
-  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: "deny" }; });
-  win.webContents.on("will-navigate", (e) => e.preventDefault());
-
+// IPC lives for the whole app run; handlers always talk to the current window
+function registerIpc() {
   const h = (ch, fn) => ipcMain.handle(ch, async (_e, arg) => {
     try { return await fn(arg ?? {}); } catch (e) { return { ok: false, error: String(e.message || e) }; }
   });
@@ -200,7 +190,7 @@ function createWindow() {
     return { dir };
   });
   h("projects:pick", async () => {
-    const r = await dialog.showOpenDialog(win, { properties: ["openDirectory", "createDirectory"] });
+    const r = await dialog.showOpenDialog(mainWin, { properties: ["openDirectory", "createDirectory"] });
     if (r.canceled) return null;
     remember(r.filePaths[0]);
     return { dir: r.filePaths[0] };
@@ -208,7 +198,7 @@ function createWindow() {
   h("projects:open", ({ dir }) => {
     current = path.resolve(dir);
     remember(current);
-    watch(current, win);
+    watch(current);
     return { dir: current, files: listFiles(current), session: !!settings.sessions[current] };
   });
   h("projects:files", ({ dir }) => listFiles(dir));
@@ -222,7 +212,7 @@ function createWindow() {
   h("projects:reveal", ({ dir, rel }) => shell.showItemInFolder(path.join(dir, rel || "")));
   h("open:external", ({ url }) => /^https?:/.test(url) && shell.openExternal(url));
   h("pick:files", async () => {
-    const r = await dialog.showOpenDialog(win, { title: "Attach a reference (optional)", properties: ["openFile", "multiSelections"],
+    const r = await dialog.showOpenDialog(mainWin, { title: "Attach a reference (optional)", properties: ["openFile", "multiSelections"],
       filters: [{ name: "Video, image or PDF", extensions: ["mp4", "mov", "webm", "m4v", "jpg", "jpeg", "png", "webp", "pdf"] }] });
     return r.canceled ? [] : r.filePaths;
   });
@@ -236,7 +226,7 @@ function createWindow() {
   });
   h("app:revealPlugin", () => shell.showItemInFolder(path.join(pluginDir(), ".claude-plugin", "plugin.json")));
 
-  h("chat:send", ({ dir, text }) => { sessionFor(dir, win).send(text); return { ok: true }; });
+  h("chat:send", ({ dir, text }) => { sessionFor(dir).send(text); return { ok: true }; });
   h("chat:stop", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); return { ok: true }; });
   h("chat:new", ({ dir }) => { sessions.get(dir)?.stop(); sessions.delete(dir); delete settings.sessions[dir]; save(); return { ok: true }; });
 
@@ -293,10 +283,28 @@ function createWindow() {
     await run("python3", [path.join(skillDir(), "scripts/timeline.py"), dir]);
     return report;
   });
+}
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1560, height: 980, minWidth: 1100, minHeight: 700, backgroundColor: nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff", title: "Director",
+    titleBarStyle: "hiddenInset", trafficLightPosition: { x: 16, y: 18 },
+    show: false, // shown on ready-to-show, so the launch animation starts on a painted window (no white flash)
+    ...(process.env.DIRECTOR_SNAPSHOT && { paintWhenInitiallyHidden: true }), // dev screenshots stay hidden: nothing to click by accident
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  win.loadFile(path.join(__dirname, "renderer", "index.html"), process.env.DIRECTOR_SNAPSHOT && !process.env.DIRECTOR_INTRO ? { query: { nointro: "1" } } : {});
+  if (!process.env.DIRECTOR_SNAPSHOT) win.once("ready-to-show", () => win.show());
+  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: "deny" }; });
+  win.webContents.on("will-navigate", (e) => e.preventDefault());
+
+  mainWin = win;
+  if (!ipcRegistered) { ipcRegistered = true; registerIpc(); } // once per app run: macOS reopens windows from the Dock
   return win;
 }
 
 app.whenReady().then(() => {
+  nativeTheme.on("updated", () => mainWin && !mainWin.isDestroyed() && mainWin.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#212121" : "#ffffff"));
   if (process.env.DIRECTOR_THEME) nativeTheme.themeSource = process.env.DIRECTOR_THEME;
   // media://p/<relative path> → a file inside the open project (nothing outside it)
   protocol.handle("media", (req) => {
